@@ -72,10 +72,50 @@ foo.SetN_ext(n_ext)
 foo.SetRadius(rad)
 ```
 
-#Setting the mass in jupiter masses, where m is a float.
+* Setting the mass in jupiter masses, where m is a float.
 ```
 foo.SetMass(m)
 ```
+
+* Setting the Filepath Information of the Jupyter Output files folder, where filepath is a string.
+```
+foo.SetInDir(filepath)
+```
+
+* Setting the list of hydrodynamical fields to convert, where fields_list is a list of strings.
+
+```
+foo.SetFeatures(fields_list)
+```
+
+* Run the conversion. Once all inputs were given, the conversion can be started and the files will be converted.
+
+```
+foo.Wrapper()
+```
+
+## Process
+
+The Wrapper() function includes the whole conversion process. 
+It starts by setting up all the necessary directories and calculates the numerical constants.
+Then it reads in the descriptor file Descriptor.dat of the simulation and builds the grid. In this step in removes the innermost radial cell if there are an odd number of radial cells. If specified, it also extend the vertical axis. Once the grid layers are built, the grid parent information is calculated, including the location in the parent layer where the current layer and the size of the layer as measured in units of the parent layer starts.
+After this the data file conversion starts. Here the Wrapper() function iterated over the list of features and converts one file after the other. The data file, containing all data points in one line of values for each layer, is read in. Each line is reshaped into a 3D array and, if specified, extended(See below for details). Then the iteration order is adjusted and the reordered lines are cached for later.
+Next, the data file for the current feature is written in the appropriate structure. The dust data files are generated from the gas data files. The density is divided by 100 and all other are just copied.
+Once all files have been successfully converted, you can find the files in a folder 'RADMC3DXXXXX', where 'XXXXX' is the zero-padded simulation number.
+
+### Extension
+
+The extension of the data files depends on the hydrodynamical field. 
+
+* gas/dust density
+The gas and dust density data is extended by fitting a gaussian on the initial data and then evaluated on the extended grid.
+
+* all other fields
+For all the other fields the extension works by copying the lowest and highest the specified number of times and appending them.
+
+ 
+
+
 
 
 ## License
