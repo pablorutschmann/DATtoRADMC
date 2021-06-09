@@ -7,9 +7,9 @@ rupablo@student.ethz.ch
 
 This is a class that can convert the hydrodynamical output files of the JUPYTER (file format .dat) to input files for RADMC3D. It can also extend the coordinates and data files by a user set number of cells. 
 
-Based on a project by Evert Nasedkin @nenasedk, 2018: [JUPITER_VTKFileConversion](https://github.com/nenasedk/JUPITER_VTKFileConversion)
+Based on a project by Evert Nasedkin @nenasedk , 2018: [JUPITER_VTKFileConversion](https://github.com/nenasedk/JUPITER_VTKFileConversion)
 
-##Requirements
+## Requirements
 * Python 3.8
 * numpy
 * scipy
