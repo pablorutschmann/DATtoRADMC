@@ -131,4 +131,3 @@ For all the other fields the extension works by copying the lowest and highest t
 
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
