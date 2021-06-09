@@ -1,8 +1,9 @@
 # JUPYTER .dat to RADMC3D input files conversion class
 
-'v1.0'
+`v1.0`
 
 Rutschmann Pablo, June 2021
+
 rupablo@student.ethz.ch
 
 This is a class that can convert the hydrodynamical simulation output files of the JUPYTER (file format .dat) to input files for RADMC3D. It can also extend the coordinates and data files by a user set number of cells. 
@@ -98,9 +99,12 @@ foo.Wrapper()
 
 The `Wrapper()` function includes the whole conversion process. 
 It starts by setting up all the necessary directories and calculates the numerical constants.
+
 Then it reads in the descriptor file `Descriptor.dat` of the simulation and builds the grid. In this step in removes the innermost radial cell if there are an odd number of radial cells. If specified, it also extend the vertical axis. Once the grid layers are built, the grid parent information is calculated, including the location in the parent layer where the current layer and the size of the layer as measured in units of the parent layer starts.
+
 After this the data file conversion starts. Here the `Wrapper()` function iterated over the list of features and converts one file after the other. The data file, containing all data points in one line of values for each layer, is read in. Each line is reshaped into a 3D array and, if specified, extended(See below for details). Then the iteration order is adjusted and the reordered lines are cached for later.
 Next, the data file for the current feature is written in the appropriate structure. The dust data files are generated from the gas data files. The density is divided by 100 and all other are just copied.
+
 Once all files have been successfully converted, you can find the files in a folder `RADMC3DXXXXX`, where `XXXXX` is the zero-padded simulation number.
 
 ### Extension
@@ -115,7 +119,15 @@ For all the other fields the extension works by copying the lowest and highest t
 
  
 
+## Roadmap
 
+* make a user friendly python script
+
+* make a command line interface
+
+* automatically detect files in the input folder to convert, convert all input
+
+* create pip install functionality
 
 
 ## License
