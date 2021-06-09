@@ -57,12 +57,7 @@ foo.SetRefinement(n_ref)
 foo.SetMirror(mir)
 ```
 
-* Whether to extend the vertical axis, where `ext` is a boolean, default is `True`.
-```python
-foo.SetExtend(ext)
-```
-
-* Setting the number of cells to extend by in the vertical direction, where `n_ext` is an integer, default is `30`.
+* Setting the number of cells to extend by in the vertical direction in each direction(so the length of the vertical axis will increase by `2 * n_ext`), where `n_ext` is an integer, default is `30`. `0` for no extension. 
 
 ```python
 foo.SetN_ext(n_ext)

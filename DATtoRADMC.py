@@ -2,9 +2,6 @@ import os, sys
 import numpy as np
 from scipy.optimize import curve_fit
 import astropy.units as u
-import astropy.constants as c
-import string
-from decimal import *
 
 class DATtoRADMC:
     """
@@ -20,17 +17,14 @@ class DATtoRADMC:
         self.nLevels = -1  # Number of Mesh Levels (with Base Grid)
         self.nRefinements = -1 # Refinement levels
         self.mirror = False # Mirror theta axis
-        self.extend = False # Extend theta axis
-        self.n_extend = 30 # Number of cells to extend by. Default: 30
-        self.features = []  # All to be converted Hyrdofields
+        self.n_extend = 30 # Number of cells to extend by. Default: 30. 0 for no extension
+        self.features = []  # All to be converted Hydrofields
         self.__feature = 'notafeat' # Currently converted __feature, should not be accessed by user.
         self.__cur00 = 0.0
         self.nLevelCoords = []  # Number of Vertices along each axis at each refinement level [[len(phi[0]),len(r[0]),len(th[0])],[...],...]
         self.oddR = False # Oddness of Base Grid Radial Cell Number
         self.precis = 8 # Floating point precision of the output files
         self.nrspec = 1 # Number of fluids
-
-
 
         self.featlist = ['gasdensity', 'gastemperature', 'gasenergy',
                          'gaserad', 'gasopacity', 'gaspotential',
@@ -104,8 +98,8 @@ class DATtoRADMC:
     def SetMirror(self,bool):
         self.mirror = bool
 
-    def SetExtend(self,bool):
-        self.extend = bool
+    def SetExtend(self,n_ext):
+        self.n_extend = n_ext
 
     def SetFeatures(self, feats):
         for feat in feats:
@@ -453,7 +447,7 @@ class DATtoRADMC:
         len_th = len(th_array)
         th_diff = th_array[1] - th_array[0]
         #if ext == True, extends the theta array by 30 before mirroring
-        if self.extend == True and index == 0:
+        if self.n_extend > 0 and index == 0:
             for i in range(0, self.n_extend):
                 th_array.insert(0, th_array[0] - th_diff)
             len_th = len(th_array)
@@ -494,7 +488,7 @@ class DATtoRADMC:
             num_th = num_th * 2
             #self.ncells[index][1] = num_th
 
-        if self.extend == True and index == 0 and 'density' in self.__feature:
+        if self.n_extend > 0 and index == 0 and 'density' in self.__feature:
 
             def g(x, amp, mean, stddev):
                 z = (x - mean) / stddev
@@ -539,7 +533,7 @@ class DATtoRADMC:
             num_th += 2 * self.n_extend
                 #self.ncells[index][1] = num_th
 
-        if self.extend == True and index == 0 and 'temperature' in self.__feature:
+        if self.n_extend and index == 0 and 'temperature' in self.__feature:
             temp_top = reshaped_dat[-1,:,:]
             temp_bot = reshaped_dat[0,:,:]
             temp_top = np.tile(temp_top, (self.n_extend,1,1))
