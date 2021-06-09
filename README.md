@@ -20,11 +20,11 @@ Based on a project by Evert Nasedkin @nenasedk , 2018: [JUPITER_VTKFileConversio
 
 Download the DATtoRADMC.py python file and import the modules into another python file, where you initialise the class and set up the conversion.
 
-'''
+```
 import DATtoRADMC as *
 
 yourclass = DATtoRADMC()
-'''
+```
 
 
 
