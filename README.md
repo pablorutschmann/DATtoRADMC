@@ -140,10 +140,6 @@ For all the other fields the extension works by copying the lowest and highest t
 
 * make a user friendly python script
 
-* make a command line interface
-
-* automatically detect files in the input folder to convert, convert all input
-
 * create pip install functionality
 
 
