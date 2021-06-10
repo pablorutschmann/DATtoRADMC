@@ -16,7 +16,7 @@ class DATtoRADMC:
         self.outNumber = -1  # Simulation Number
         self.nLevels = -1  # Number of Mesh Levels (with Base Grid)
         self.nRefinements = -1 # Refinement levels
-        self.mirror = False # Mirror theta axis
+        self.mirror = True # Mirror theta axis
         self.n_extend = 30 # Number of cells to extend by. Default: 30. 0 for no extension
         self.features = []  # All to be converted Hydrofields
         self.__feature = 'notafeat' # Currently converted __feature, should not be accessed by user.
@@ -443,6 +443,8 @@ class DATtoRADMC:
     #   2. Mirrors, if wanted, the theta axis along the midplane
     # Output: extended and mirrored theta array
     # ---------------------------------------------------------------------------------------------
+
+    #ToDo switch order of mirro and extend, s.t. one can extend without mirroring.
     def extend_th_coords(self,th_array, index):
         len_th = len(th_array)
         th_diff = th_array[1] - th_array[0]
@@ -460,6 +462,8 @@ class DATtoRADMC:
             return th_array + flipped_th
         else:
             return th_array
+
+
 
     # ---------------------------------------------------------------------------------------------
     # reorder_one_line
@@ -507,16 +511,21 @@ class DATtoRADMC:
                 return data_coords
 
             data_coords_new = get_data_coords(ynew)
-            data_coords_old = data_coords_new[self.n_extend:-self.n_extend]
-
-            extended_dat = np.zeros((num_th + 2 * self.n_extend,num_r,num_phi))
+            if self.mirror == True:
+                data_coords_old = data_coords_new[self.n_extend:-self.n_extend]
+                extended_dat = np.zeros((num_th + 2 * self.n_extend,num_r,num_phi))
+            else:
+                data_coords_old = data_coords_new[self.n_extend:]
+                extended_dat = np.zeros((num_th + self.n_extend, num_r, num_phi))
 
             # fixing the boundaries to be continous
+
             sigma = np.ones(len(data_coords_old))
             sigma[0] = 0.01
             sigma[-1] = 0.01
 
             # do fitting and extrapolation
+            #ToDo extension if not mirrored with gaussian doesnt make sense.
             for r in range(num_r):
                 for phi in range(num_phi):
                     th_old = reshaped_dat[:,r,phi]
@@ -524,8 +533,11 @@ class DATtoRADMC:
                     coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
                     th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
                     th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
+                    if self.mirror == True:
+                        th_new = np.concatenate([th_new_bottom, th_old, th_new_top])
+                    else:
+                        th_new = np.concatenate([th_new_bottom, th_old])
 
-                    th_new = np.concatenate([th_new_bottom,th_old,th_new_top])
                     extended_dat[:, r, phi] = th_new
 
 
@@ -533,13 +545,17 @@ class DATtoRADMC:
             num_th += 2 * self.n_extend
                 #self.ncells[index][1] = num_th
 
-        if self.n_extend and index == 0 and 'temperature' in self.__feature:
+        if self.n_extend > 0 and index == 0 and 'temperature' in self.__feature:
             temp_top = reshaped_dat[-1,:,:]
             temp_bot = reshaped_dat[0,:,:]
             temp_top = np.tile(temp_top, (self.n_extend,1,1))
             temp_bot = np.tile(temp_bot, (self.n_extend,1,1))
-            reshaped_dat = np.concatenate([temp_bot, reshaped_dat, temp_top],axis=0)
-            num_th += 2 * self.n_extend
+            if self.mirror == True:
+                reshaped_dat = np.concatenate([temp_bot, reshaped_dat, temp_top],axis=0)
+                num_th += 2 * self.n_extend
+            else:
+                reshaped_dat = np.concatenate([temp_bot, reshaped_dat], axis=0)
+                num_th += self.n_extend
 
         #update ncells with the new numbers
         n_th,n_r,n_phi = np.shape(reshaped_dat)
