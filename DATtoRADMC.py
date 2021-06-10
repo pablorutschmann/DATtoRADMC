@@ -394,7 +394,6 @@ class DATtoRADMC:
                         cur.pop(0)
                     cur.pop()
                     cur.pop()
-                    #ToDo Scale Radius to right Units
                     cur_scaled = [np.float64(x * (self.rcgs.value))  for x in cur]
                     r.append(cur_scaled)
                     cur = []
@@ -416,8 +415,6 @@ class DATtoRADMC:
         self.LevelCoords['r'] = r
         self.LevelCoords['th'] = th
         self.get_parent_info()
-        # ToDo Check if nLevelCoords of base grid matches self.ncells
-        # ToDo Print Length of Base Grid Arrays if they match
         if self.ncells[0][0] == self.nLevelCoords[0][0]:
             raise Exception('Number of cells and number of vertices in the Base-Grid do not match!')
         else:
@@ -489,7 +486,6 @@ class DATtoRADMC:
     # Output: extended and mirrored theta array
     # ---------------------------------------------------------------------------------------------
 
-    #ToDo switch order of mirro and extend, s.t. one can extend without mirroring.
     def extend_th_coords(self,th_array, index):
         len_th = len(th_array)
         th_diff = th_array[1] - th_array[0]
@@ -590,7 +586,7 @@ class DATtoRADMC:
             num_th += 2 * self.n_extend
                 #self.ncells[index][1] = num_th
 
-        if self.n_extend > 0 and index == 0 and 'temperature' in self.__feature:
+        if self.n_extend > 0 and index == 0 and not 'density' in self.__feature:
             temp_top = reshaped_dat[-1,:,:]
             temp_bot = reshaped_dat[0,:,:]
             temp_top = np.tile(temp_top, (self.n_extend,1,1))
