@@ -2,13 +2,16 @@ import os, sys
 import numpy as np
 from scipy.optimize import curve_fit
 import astropy.units as u
+from os import listdir
+from os.path import isfile, join
+
 
 class DATtoRADMC:
     """
-    Convert JUPITER .DAT files to binary Files for RADMC3D
+    Convert JUPYTER .DAT files to binary files for RADMC3D
 
-    Reads in a Descriptor.dat file and a hydrodynamic field file (.dat)
-    Outputs a
+    Reads in a Descriptor.dat file and a hydrodynamic field files (.dat)
+    Outputs the grid file and the converted data files
     """
 
     def __init__(self):
@@ -18,7 +21,7 @@ class DATtoRADMC:
         self.nRefinements = -1 # Refinement levels
         self.mirror = True # Mirror theta axis
         self.n_extend = 30 # Number of cells to extend by. Default: 30. 0 for no extension
-        self.features = []  # All to be converted Hydrofields
+        self.features = ['all']  # All to be converted Hydrofields, default fetches all the files in the data directory.
         self.__feature = 'notafeat' # Currently converted __feature, should not be accessed by user.
         self.__cur00 = 0.0
         self.nLevelCoords = []  # Number of Vertices along each axis at each refinement level [[len(phi[0]),len(r[0]),len(th[0])],[...],...]
@@ -47,7 +50,6 @@ class DATtoRADMC:
         self.dataDir = 'notadir'  # Jupyter output folder
         self.dataOutPath = 'notapath'  # Destination Folder
         self.inFilename = 'notaname'  # Filename constructed from __feature, outNumber and nLevels (Changes for every level)
-        self.outFilename = 'notaname'
         self.descriptorName = 'notadesc' # Name of the descriptor file
         self.BASEPATH = os.getcwd() + '/' # Current Directory
 
@@ -102,13 +104,19 @@ class DATtoRADMC:
         self.n_extend = n_ext
 
     def SetFeatures(self, feats):
-        for feat in feats:
-            if feat in self.featlist:
-                self.features.append(feat)
-            else:
-                print(feat + " is not a recognised input, may not be implemented. Continuing...")
-                self.features.remove(feat)
-        self.__feature = self.features[0]
+        if 'all' in feats:
+            self.features = ['all']
+            print('Fetching all files in the data directory.')
+        else:
+            features = []
+            for feat in feats:
+                if feat in self.featlist:
+                    features.append(feat)
+                else:
+                    print(feat + " is not a recognised input, may not be implemented. Continuing...")
+                    self.features.remove(feat)
+            self.features = features
+            self.__feature = self.features[0]
 
     def SetBasePath(self,path):
         self.BASEPATH = path
@@ -172,7 +180,6 @@ class DATtoRADMC:
         self.dataDir = self.BASEPATH + "output" + str(self.outNumber).zfill(5) + "/"
         self.dataOutPath = self.BASEPATH + "RADMC" + str(self.outNumber).zfill(5) + "/"
         self.descriptorName = "Descriptor" + str(self.outNumber) + ".dat"
-        self.outFilename = self.__feature + str(self.outNumber).zfill(3) + "_" + str(self.nLevels) + ".dat"
 
         # Check existance
         print("Data directory is: " + self.dataDir)
@@ -205,6 +212,28 @@ class DATtoRADMC:
             sys.exit(1)
 
     # ---------------------------------------------------------------------------------------------
+    # fetch_features
+    #
+    # Wraps the whole conversion process under one function. Once all user inputs were given this function can be called and it will:
+    # 1. Setup the Directories
+    # 2. Build the Base Grid and calculates/stores the Parent Information
+    # 3. Goes through all the features and performs the conversion process:
+    #     a. Prepares the converted data by reordering it and possibly mirrors/extends it
+    #     b. Writes the converted data into the RADMC3D input write_data_file
+    # 4. Checks the dimensions of the data and grid file
+    # 5. Finally writes the Grid File
+    # ---------------------------------------------------------------------------------------------
+
+    def fetch_features(self):
+        onlyfiles = [f for f in listdir(self.dataDir) if isfile(join(self.dataDir, f))]
+        combined ='\t'.join(onlyfiles)
+        all_features = []
+        for feat in self.featlist:
+            if feat in combined:
+                all_features.append(feat)
+        return all_features
+
+    # ---------------------------------------------------------------------------------------------
     # Important part starts here
     # ---------------------------------------------------------------------------------------------
 
@@ -224,7 +253,16 @@ class DATtoRADMC:
     def Wrapper(self):
         self.SetupDirs()
         self.SetConstants()
+
+        if self.features == ['all']:
+            self.features = self.fetch_features()
+            print('Found the following hydroynamical fields in: ' + self.dataDir)
+            print(self.features)
+            self.__feature = self.features[0]
+
         self.GetCoordinates()
+
+
 
         self.completed = []
 
@@ -241,6 +279,13 @@ class DATtoRADMC:
 
         self.write_grid_file()
         print('Conversion Completed, converted ' + str(len(self.completed)) + '/' + str(len(self.features)))
+
+
+
+
+
+
+
 
     # ---------------------------------------------------------------------------------------------
     # Convert Files

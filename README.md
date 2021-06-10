@@ -78,7 +78,7 @@ foo.SetMass(mass)
 foo.SetInDir(filepath)
 ```
 
-* Setting the list of hydrodynamical fields to convert, where `field_list` is a list of strings.
+* Setting the list of hydrodynamical fields to convert, where `field_list` is a list of strings, default is `'all'`, which fetches all the features from files it can find in the data directory.
 
 ```python
 foo.SetFeatures(field_list)
@@ -94,13 +94,15 @@ foo.Wrapper()
 
 With the python script `script_convert.py` you can easily run the conversion directly from the command line. The order of the parameters is the same as above. The following lists the required arguments. Note that the field list argument MUST be the final argument in the command.
 ```
-python3 script_convert.py [sim_num] [grid_levels] [ref_level] [radius] [mass] -f [field_list]
+python3 script_convert.py [sim_num] [grid_levels] [ref_level] [radius] [mass]
 ```
 
 or with full options:
 ```
 python3 script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [field_list]
 ```
+
+If no list of fields is given it defaults to `'all'`, which fetches all the files in the data directory.
 
 The directory should contain a folder labelled `outputXXXXX`, where `XXXXX` is the simulation output number padded to 5 digits.
 

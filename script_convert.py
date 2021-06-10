@@ -1,7 +1,7 @@
 # This is a script to automate the conversion of dat to RADMC3D files
 #
 # default usage:
-# python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass] -f [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
 # python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [field_list]
@@ -84,8 +84,8 @@ parser.add_argument('-f',
                     action = 'append',
                     type = str,
                     nargs = argparse.REMAINDER,
-                    help= 'list of hydrodynamic fields to convert',
-	   	            required = True)
+                    help= 'list of hydrodynamic fields to convert, default is all. which fetches the features from the data directory',
+	   	            required = False)
 
 
 args = parser.parse_args()
@@ -93,7 +93,8 @@ args = parser.parse_args()
 
 print(args.n)
 print("Converting outputs from " + str(args.o[0]).zfill(5))
-print("Converting fields " + str(args.fields[0]))
+
+
 
 dv = DATtoRADMC.DATtoRADMC()
 #Setting the simulation number
@@ -121,7 +122,15 @@ dv.SetRadius(args.r[0])
 dv.SetMass(args.m[0])
 
 #Setting the features
-dv.SetFeatures(args.fields[0])
+if args.fields is not None:
+    dv.SetFeatures(args.fields[0])
+    if 'all' in args.fields[0]:
+        print('Converting all files in the data directory')
+    else:
+        print("Converting fields " + str(args.fields[0]))
+
+else:
+    print('Converting all files in the data directory')
 
 #Setting the parent directory of the folder with the JUPYTER output folder in it.
 if args.directory is not None:
