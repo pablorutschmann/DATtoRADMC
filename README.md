@@ -28,28 +28,28 @@ foo = DATtoRADMC()
 ```
 
 
-## Usage
+## Usage of the class `DATtoRADMC()`
 
 To convert the JUPYTER files, you first have to give several user inputs.
 
 ### Provide information about the simulation
 
-* Setting the simulation number, where `i_sim` is an integer.
+* Setting the simulation number, where `sim_num` is an integer.
 
 ```python
-foo.SetOutNumber(i_sim)
+foo.SetOutNumber(sim_num)
 ```
 
-* Setting the number of layers including the base layer, where `n_levels` is an integer.
+* Setting the number of layers including the base layer, where `grid_levels` is an integer.
 
 ```python
-foo.SetLevel(n_levels)
+foo.SetLevel(grid_levels)
 ```
 
-* Setting the number of refinement levels, where `n_ref` is an integer.
+* Setting the number of refinement levels, where `ref_levels` is an integer.
 
 ```python
-foo.SetRefinement(n_ref)
+foo.SetRefinement(ref_levels)
 ```
 
 * Whether to mirror the vertical axis, where `mir` is a boolean, default is `True`.
@@ -63,14 +63,14 @@ foo.SetMirror(mir)
 foo.SetN_ext(n_ext)
 ```
 
-* Setting the radius of the orbit in Au, where `rad` is a float.
+* Setting the orbital radius of the planet in Au, where `radius` is a float.
 ```python
-foo.SetRadius(rad)
+foo.SetRadius(radius)
 ```
 
-* Setting the mass in jupiter masses, where `m` is a float.
+* Setting the mass in solar masses, where `mass` is a float.
 ```python
-foo.SetMass(m)
+foo.SetMass(mass)
 ```
 
 * Setting the Filepath Information of the Jupyter Output files folder, where `filepath` is a string.
@@ -78,10 +78,10 @@ foo.SetMass(m)
 foo.SetInDir(filepath)
 ```
 
-* Setting the list of hydrodynamical fields to convert, where `fields_list` is a list of strings.
+* Setting the list of hydrodynamical fields to convert, where `field_list` is a list of strings.
 
 ```python
-foo.SetFeatures(fields_list)
+foo.SetFeatures(field_list)
 ```
 
 * Run the conversion. Once all inputs were given, the conversion can be started by calling the `Wrapper()` function and the files will be converted.
@@ -90,6 +90,26 @@ foo.SetFeatures(fields_list)
 foo.Wrapper()
 ```
 
+## Usage with `script_convert.py` in the command line
+
+With the python script `script_convert.py` you can easily run the conversion directly from the command line. The order of the parameters is the same as above. The following lists the required arguments. Note that the field list argument MUST be the final argument in the command.
+```
+python3 script_convert.py [sim_num] [grid_levels] [ref_level] [radius] [mass] -f [field_list]
+```
+
+or with full options:
+```
+python3 script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [field_list]
+```
+
+The directory should contain a folder labelled `outputXXXXX`, where `XXXXX` is the simulation output number padded to 5 digits.
+
+An example for output 235, with 5 grid levels, 4 refinement levels, radius of 50 Au and 1 solar mass, converting the gas- and dustdensity:
+```
+python3 script_convert.py 235 5 4 50 1 -f gasdensity dustdensity
+```
+
+
 ## Process
 
 The `Wrapper()` function includes the whole conversion process. 
@@ -97,7 +117,7 @@ It starts by setting up all the necessary directories and calculates the numeric
 
 Then it reads in the descriptor file `Descriptor.dat` of the simulation and builds the grid. In this step in removes the innermost radial cell if there are an odd number of radial cells. If specified, it also extend the vertical axis. Once the grid layers are built, the grid parent information is calculated, including the location in the parent layer where the current layer and the size of the layer as measured in units of the parent layer starts.
 
-After this the data file conversion starts. Here the `Wrapper()` function iterated over the list of features and converts one file after the other. The data file, containing all data points in one line of values for each layer, is read in. Each line is reshaped into a 3D array and, if specified, extended(See below for details). Then the iteration order is adjusted and the reordered lines are cached for later.
+After this the data file conversion starts. Here the `Wrapper()` function iterates over the list of features and converts one file after the other. The data file, containing all data points in one line of values for each layer, is read in. Each line is reshaped into a 3D array and, if specified, extended(See below for details). Then the iteration order is adjusted and the reordered lines are cached for later.
 Next, the data file for the current feature is written in the appropriate structure. The dust data files are generated from the gas data files. The density is divided by 100 and all other are just copied.
 
 Once all files have been successfully converted, you can find the files in a folder `RADMC3DXXXXX`, where `XXXXX` is the zero-padded simulation number.
