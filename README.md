@@ -142,5 +142,6 @@ For all the other fields the extension works by copying the lowest and highest t
 
 * create pip install functionality
 
+* check if dust_density files exist. use them instead. if not generate them.
 
 ## License
