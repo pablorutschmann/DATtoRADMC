@@ -122,16 +122,6 @@ class DATtoRADMC:
             self.features = feats
             self.all = False
 
-            # features = []
-            # for feat in feats:
-            #     if feat in self.featlist:
-            #         features.append(feat)
-            #     else:
-            #         print(feat + " is not a recognised input, may not be implemented. Continuing...")
-            #         self.features.remove(feat)
-            # features.sort(reverse=True)
-            # self.features = features
-
     def SetBasePath(self, path):
         self.BASEPATH = path
 
