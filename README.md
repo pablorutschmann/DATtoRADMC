@@ -1,6 +1,6 @@
 # JUPYTER .dat to RADMC3D input files conversion class
 
-`v1.2.1`
+`v1.3`
 
 Rutschmann Pablo, June 2021
 
@@ -63,6 +63,12 @@ foo.SetMirror(mir)
 foo.SetN_ext(n_ext)
 ```
 
+* Whether to ignore the existing dust data files and force the generation from the gas data files, where `force` is a boolean, default is `True`. If `False`, the dust data files will be convertet if it exists. If it can't be found the dust file will be generated from the gas file.
+
+```python
+foo.SetForce(force)
+```
+
 * Setting the orbital radius of the planet in Au, where `radius` is a float.
 ```python
 foo.SetRadius(radius)
@@ -99,7 +105,7 @@ python3 script_convert.py [sim_num] [grid_levels] [ref_level] [radius] [mass]
 
 or with full options:
 ```
-python3 script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [field_list]
+python3 script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
 ```
 
 If no list of fields is given it defaults to `'all'`, which fetches all the files in the data directory.
@@ -108,7 +114,7 @@ The directory should contain a folder labelled `outputXXXXX`, where `XXXXX` is t
 
 An example for output 235, with 5 grid levels, 4 refinement levels, radius of 50 Au and 1 solar mass, converting the gas- and dustdensity:
 ```
-python3 script_convert.py 235 5 4 50 1 -f gasdensity dustdensity
+python3 script_convert.py 235 5 4 50 1 -l gasdensity dustdensity
 ```
 
 
@@ -142,6 +148,6 @@ For all the other fields the extension works by copying the lowest and highest t
 
 * create pip install functionality
 
-* check if dust_density files exist. use them instead. if not generate them.
+* update the gaussian fit if dust density is to be converted. 
 
 ## License

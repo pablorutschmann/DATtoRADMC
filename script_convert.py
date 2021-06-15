@@ -4,7 +4,7 @@
 # python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
-# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -h [field_list]
 #
 # The list of fields MUST always be the final argument.
 #
@@ -78,20 +78,26 @@ parser.add_argument('-d',
 		            required = False,
                     help= "Directory to output folders, should contain a folder labelled outputXXXXX, where XXXXX is the simulation output number padded to 5 digits.")
 
-
 parser.add_argument('-f',
-                    '--fields',
+                    '--force',
+                    action = 'store',
+                    type = bool,
+                    nargs = 1,
+		            required = False,
+                    help= 'If True it ignores the found dust files and generates them form the gas files. If False it generates only the dust files that have no data file.')
+
+
+parser.add_argument('-l',
+                    '--listoffields',
                     action = 'append',
                     type = str,
                     nargs = argparse.REMAINDER,
-                    help= 'list of hydrodynamic fields to convert, default is all. which fetches the features from the data directory',
+                    help= 'List of hydrodynamic fields to convert, default is all. which fetches the features from the data directory',
 	   	            required = False)
 
 
 args = parser.parse_args()
 
-
-print(args.n)
 print("Converting outputs from " + str(args.o[0]).zfill(5))
 
 
@@ -121,22 +127,20 @@ dv.SetRadius(args.r[0])
 #Setting the mass
 dv.SetMass(args.m[0])
 
+#Setting the parent directory of the folder with the JUPYTER output folder in it.
+if args.force is not None:
+    dv.SetForce(args.force[0])
+
 #Setting the features
-if args.fields is not None:
-    dv.SetFeatures(args.fields[0])
-    if 'all' in args.fields[0]:
+if args.listoffields is not None:
+    dv.SetFeatures(args.listoffields[0])
+    if 'all' in args.listoffields[0]:
         print('Converting all files in the data directory')
     else:
-        print("Converting fields " + str(args.fields[0]))
+        print("Converting fields " + str(args.listoffields[0]))
 
 else:
     print('Converting all files in the data directory')
-
-#Setting the parent directory of the folder with the JUPYTER output folder in it.
-if args.directory is not None:
-    if not args.directory[0].endswith("/"):
-        args.directory += "/"
-    dv.SetBasePath(args.directory[0])
 
 dv.Wrapper()
 

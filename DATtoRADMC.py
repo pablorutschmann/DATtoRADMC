@@ -22,6 +22,8 @@ class DATtoRADMC:
         self.mirror = True  # Mirror theta axis
         self.n_extend = 30  # Number of cells to extend by. Default: 30. 0 for no extension
         self.features = ['all']  # All to be converted Hydrofields, default fetches all the files in the data directory.
+        self.all = True  # Whether all was inputted in features.
+        self.force = False  # Force the generation of dust files from gas files they dont exist. If false it only generates the dust files that dont exist.
         self.__feature = 'notafeat'  # Currently converted __feature, should not be accessed by user.
         self.__cur00 = 0.0
         self.nLevelCoords = []  # Number of Vertices along each axis at each refinement level [[len(phi[0]),len(r[0]),len(th[0])],[...],...]
@@ -29,20 +31,23 @@ class DATtoRADMC:
         self.precis = 8  # Floating point precision of the output files
         self.nrspec = 1  # Number of fluids
 
-        self.featlist = ['gasdensity', 'gastemperature', 'gasenergy',
-                         'gaserad', 'gasopacity', 'gaspotential',
-                         'gasstheat', 'gastau', 'gastaucell',
-                         'gasvelocity', 'dustdensity', 'dusttemperature',
-                         'dustenergy', 'dusterad', 'dustopacity',
-                         'dustpotential', 'duststheat', 'dusttau',
-                         'dusttaucell', 'dustvelocity']
-        self.out_featlist = ['gas_density', 'gas_temperature', 'gas_energy',
-                             'gas_erad', 'gas_opacity', 'gas_potential',
-                             'gas_stheat', 'gas_tau', 'gas_taucell',
-                             'gas_velocity', 'dust_density', 'dust_temperature',
-                             'dust_energy', 'dust_erad', 'dust_opacity',
-                             'dust_potential', 'dust_stheat', 'dust_tau',
-                             'dust_taucell', 'dust_velocity']
+        self.featlist = ['gasvelocity', 'gastemperature', 'gastaucell',
+                         'gastau', 'gasstheat', 'gaspotential',
+                         'gasopacity', 'gaserad', 'gasenergy',
+                         'gasdensity', 'dustvelocity', 'dusttemperature',
+                         'dusttaucell', 'dusttau', 'duststheat',
+                         'dustpotential', 'dustopacity', 'dusterad',
+                         'dustenergy', 'dustdensity']
+
+        self.out_featlist = ['gas_velocity', 'gas_temperature', 'gas_taucell',
+                             'gas_tau', 'gas_stheat', 'gas_potential',
+                             'gas_opacity', 'gas_erad', 'gas_energy',
+                             'gas_density', 'dust_velocity', 'dust_temperature',
+                             'dust_taucell', 'dust_tau', 'dust_stheat',
+                             'dust_potential', 'dust_opacity', 'dust_erad',
+                             'dust_energy', 'dust_density']
+
+        self.dust_exists = []
 
         self.completed = []
 
@@ -103,20 +108,29 @@ class DATtoRADMC:
     def SetExtend(self, n_ext):
         self.n_extend = n_ext
 
+    def SetForce(self, bool):
+        self.force = bool
+
     def SetFeatures(self, feats):
         if 'all' in feats:
-            self.features = ['all']
+            self.all = True
             print('Fetching all files in the data directory.')
+            self.features = []
+
         else:
-            features = []
-            for feat in feats:
-                if feat in self.featlist:
-                    features.append(feat)
-                else:
-                    print(feat + " is not a recognised input, may not be implemented. Continuing...")
-                    self.features.remove(feat)
-            self.features = features
-            self.__feature = self.features[0]
+            feats.sort(reverse=True)
+            self.features = feats
+            self.all = False
+
+            # features = []
+            # for feat in feats:
+            #     if feat in self.featlist:
+            #         features.append(feat)
+            #     else:
+            #         print(feat + " is not a recognised input, may not be implemented. Continuing...")
+            #         self.features.remove(feat)
+            # features.sort(reverse=True)
+            # self.features = features
 
     def SetBasePath(self, path):
         self.BASEPATH = path
@@ -218,17 +232,52 @@ class DATtoRADMC:
     # ---------------------------------------------------------------------------------------------
     # fetch_features
     #
-    # Finds all the files from the data directory and creates a list of them
+    # Finds all the files from the data directory and creates a list of them.
+    # Also creates a list of dust files that exists.
     # ---------------------------------------------------------------------------------------------
 
     def fetch_features(self):
         onlyfiles = [f for f in listdir(self.dataDir) if isfile(join(self.dataDir, f))]
         combined = '\t'.join(onlyfiles)
         all_features = []
+        self.dust_exists = []
         for feat in self.featlist:
             if feat in combined:
-                all_features.append(feat)
-        return all_features
+                if self.all == True:
+                    all_features.append(feat)
+                elif self.all == False and feat in self.features:
+                    all_features.append(feat)
+
+        if self.all == True:
+            print('Found these field files in the data directory: ' + ', '.join(all_features))
+        else:
+            print('Input fields were: ' + ', '.join(all_features))
+
+        for item in [x for x in all_features if 'gas' in x]:
+            if 'dust' + item[3:] in combined:
+                self.dust_exists.append('dust' + item[3:])
+
+        no_dust_exists = []
+
+        for item in all_features:
+            if 'gas' in item:
+                if not 'dust' + item[3:] in self.dust_exists:
+                    no_dust_exists.append('dust' + item[3:])
+
+        if self.force == True:
+            print('These dust data files will be ignored: ' + ', '.join(self.dust_exists))
+            print('These dust files will be generated from the gas files: ' + ', '.join([x for x in all_features if 'dust' in x]))
+
+        else:
+            print('These dust data files will be converted: ' + ', '.join(self.dust_exists))
+            if not no_dust_exists == []:
+                print('These dust files will be generated from the gas files: ' + ', '.join(no_dust_exists))
+            else:
+                print('All dust files exist.')
+            self.features
+
+        self.features = all_features
+        self.__feature = self.features[0]
 
     # ---------------------------------------------------------------------------------------------
     # Important part starts here
@@ -243,33 +292,29 @@ class DATtoRADMC:
     # 3. Goes through all the features and performs the conversion process:
     #     a. Prepares the converted data by reordering it and possibly mirrors/extends it
     #     b. Writes the converted data into the RADMC3D input write_data_file
-    # 4. Checks the dimensions of the data and grid file
-    # 5. Finally writes the Grid File
+    # 5.`If no dust file exists or force is True it generates the dust file from the gas file.
+    # 6. Checks the dimensions of the data and grid file
+    # 7. Finally writes the Grid File
     # ---------------------------------------------------------------------------------------------
 
     def Wrapper(self):
         self.SetupDirs()
         self.SetConstants()
-
-        if self.features == ['all']:
-            self.features = self.fetch_features()
-            print('Found the following hydroynamical fields in: ' + self.dataDir)
-            print(self.features)
-            self.__feature = self.features[0]
-
+        self.fetch_features()
         self.GetCoordinates()
 
         self.completed = []
 
         for feat in self.features:
-            if 'dust' in feat:
-                pass
-            else:
+            if not feat in self.completed:
                 print(feat)
                 self.__feature = feat
                 self.ncells_filt[self.__feature] = []
                 self.ConvertFiles()
-                self.write_data_file()
+                if (not 'dust' + feat[3:] in self.dust_exists) or self.force == True and not 'dust' in feat:
+                    self.write_data_file(generate_dust=True)
+                else:
+                    self.write_data_file()
                 self.completed.append(feat)
 
         self.write_grid_file()
@@ -642,7 +687,7 @@ class DATtoRADMC:
     # writes out the data file for the current __feature
     # ---------------------------------------------------------------------------------------------
 
-    def write_data_file(self):
+    def write_data_file(self, generate_dust=False):
         n_tot_filt = 0
         for i in range(len(self.ncells_filt[self.__feature])):
             n_tot_filt += np.prod(self.ncells_filt[self.__feature][i])
@@ -659,29 +704,28 @@ class DATtoRADMC:
             print('n_tot_filt: ' + str(n_tot_filt))
 
         array_int = [1, self.precis, n_tot, self.nrspec]
-        # long integerf
+        # long integer
         array_int = np.array(array_int, dtype='int64')
 
-        if 'gas' in self.__feature:
+        if generate_dust == True and 'gas' in self.__feature:
             feat_dust = 'dust' + self.__feature[3:]
-            if feat_dust in self.features:
-                if 'density' in feat_dust:
-                    array_dust_dbl = array_dbl * 0.01
-                else:
-                    array_dust_dbl = array_dbl
-                feature_dust = self.out_featlist[self.featlist.index(feat_dust)]
-                if 'temperature' in feature_dust:
-                    outfile_dust = open(self.dataOutPath + feature_dust + '.bdat', 'wb')
-                else:
-                    outfile_dust = open(self.dataOutPath + feature_dust + '.binp', 'wb')
+            if 'density' in feat_dust:
+                array_dust_dbl = array_dbl * 0.01
+            else:
+                array_dust_dbl = array_dbl
+            feature_dust = self.out_featlist[self.featlist.index(feat_dust)]
+            if 'temperature' in feature_dust:
+                outfile_dust = open(self.dataOutPath + feature_dust + '.bdat', 'wb')
+            else:
+                outfile_dust = open(self.dataOutPath + feature_dust + '.binp', 'wb')
 
-                try:
-                    array_int.tofile(outfile_dust)
-                    array_dust_dbl.tofile(outfile_dust)
-                    print(feature_dust + ' file was generated from the gas' + self.__feature[3:] + '.dat file')
-                    self.completed.append(feat_dust)
-                finally:
-                    outfile_dust.close()
+            try:
+                array_int.tofile(outfile_dust)
+                array_dust_dbl.tofile(outfile_dust)
+                print(feature_dust + ' file was generated from the gas' + self.__feature[3:] + '.dat file')
+                self.completed.append(feat_dust)
+            finally:
+                outfile_dust.close()
 
         array_dbl = np.array(array_dbl, dtype='float64')
         feature = self.out_featlist[self.featlist.index(self.__feature)]

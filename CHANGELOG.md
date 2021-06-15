@@ -1,3 +1,6 @@
+#v1.3
+* added `force` feature. If `True`, it generates the dust files from the gas file in any case. If `False` it only generates it if it the dust data file does not exist.
+
 #v1.2.1
 *  actually extend all fields with repeating outermost layers, except for density, which is still extended with a gaussian.
 
