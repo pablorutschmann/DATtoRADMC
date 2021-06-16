@@ -1,3 +1,6 @@
+#v1.4
+* actually implemented a working `force` feature with the help of a new `fetch_features` function.
+
 #v1.3
 * added `force` feature. If `True`, it generates the dust files from the gas file in any case. If `False` it only generates it if it the dust data file does not exist.
 

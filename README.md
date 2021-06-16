@@ -63,7 +63,7 @@ foo.SetMirror(mir)
 foo.SetN_ext(n_ext)
 ```
 
-* Whether to ignore the existing dust data files and force the generation from the gas data files, where `force` is a boolean, default is `True`. If `False`, the dust data files will be convertet if it exists. If it can't be found the dust file will be generated from the gas file.
+* Whether to ignore the existing dust data files and force the generation from the gas data files, where `force` is a boolean, default is `True`. If `False`, the dust data files will be converted if they exist. If it can't be found the dust file will be generated from the gas file.
 
 ```python
 foo.SetForce(force)

@@ -47,9 +47,10 @@ class DATtoRADMC:
                              'dust_potential', 'dust_opacity', 'dust_erad',
                              'dust_energy', 'dust_density']
 
-        self.dust_exists = []
+        self.to_generate = [] # Stores all dust files that have to be generated.
 
-        self.completed = []
+        self.completed = [] # Stores the names of the completed features
+        self.generated = [] # Stores the name of the generated dust features
 
         # Filepath information
         self.dataDir = 'notadir'  # Jupyter output folder
@@ -222,52 +223,94 @@ class DATtoRADMC:
     # ---------------------------------------------------------------------------------------------
     # fetch_features
     #
-    # Finds all the files from the data directory and creates a list of them.
-    # Also creates a list of dust files that exists.
+    # Creates the appropriate list of features to be converted and checks if the files exist.
+    # Also creates a list of dust files that need to be generated, which are then excluded from the list of features.
     # ---------------------------------------------------------------------------------------------
 
     def fetch_features(self):
         onlyfiles = [f for f in listdir(self.dataDir) if isfile(join(self.dataDir, f))]
         combined = '\t'.join(onlyfiles)
         all_features = []
-        self.dust_exists = []
-        for feat in self.featlist:
-            if feat in combined:
-                if self.all == True:
-                    all_features.append(feat)
-                elif self.all == False and feat in self.features:
-                    all_features.append(feat)
+        self.to_generate = []
+        not_found = []
+
+        if self.force == True:
+            if self.all == True:
+                for item in [x for x in self.featlist if 'gas' in x]:
+                    if item in combined:
+                        all_features.append(item)
+                        self.to_generate.append('dust' + item[3:])
+            else:
+                for item in self.features:
+                    if item in self.featlist:
+                        if 'gas' in item:
+                            if item in combined:
+                                all_features.append(item)
+                                self.to_generate.append('dust' + item[3:])
+                                self.features.remove('dust' + item[3:])
+                            else:
+                                print(item + ' data file was not found!')
+                                not_found.append(item)
+                    else:
+                        print(item + ' is not a recognised feature!')
+                        self.features.remove(item)
+
+
+        else:
+            if self.all == True:
+                for item in self.featlist:
+                    if item in combined:
+                        all_features.append(item)
+
+                for item in ['dust' + x[3:] for x in all_features if 'gas' in x]:
+                    if not item in all_features:
+                        self.to_generate.append(item)
+                        print(item + ' will be generated from gas file.')
+
+            else:
+                for item in self.features:
+                    if item in self.featlist:
+                        if item in combined:
+                            all_features.append(item)
+                        else:
+                            print(item + ' data file was not found!')
+                            not_found.append(item)
+                            if 'dust' in item:
+                                if 'gas' + item[4:] in combined and 'gas' + item[4:] in self.features:
+                                    self.to_generate.append(item)
+                                    print(item + ' will be generated from gas file.')
+
+                    else:
+                        print(item + ' is not a recognised feature!')
+                        self.features.remove(item)
 
         if self.all == True:
             print('Found these field files in the data directory: ' + ', '.join(all_features))
-        else:
-            print('Input fields were: ' + ', '.join(all_features))
-
-        for item in [x for x in all_features if 'gas' in x]:
-            if 'dust' + item[3:] in combined:
-                self.dust_exists.append('dust' + item[3:])
-
-        no_dust_exists = []
-
-        for item in all_features:
-            if 'gas' in item:
-                if not 'dust' + item[3:] in self.dust_exists:
-                    no_dust_exists.append('dust' + item[3:])
-
-        if self.force == True:
-            print('These dust data files will be ignored: ' + ', '.join(self.dust_exists))
-            print('These dust files will be generated from the gas files: ' + ', '.join([x for x in all_features if 'dust' in x]))
+            if not self.to_generate == []:
+                print('These dust files will be generated: ' + ', '.join(self.to_generate))
+        elif self.force == False:
+            print('Recognised input fields were: ' + ', '.join(all_features))
+            if not self.to_generate == []:
+                print('These dust files will be generated: ' + ', '.join(self.to_generate))
+            print('Found {0} out of {1} files.'.format(len(all_features), len(self.features)))
+            if not not_found == []:
+                print('Missing files: ' + ', '.join(not_found))
 
         else:
-            print('These dust data files will be converted: ' + ', '.join(self.dust_exists))
-            if not no_dust_exists == []:
-                print('These dust files will be generated from the gas files: ' + ', '.join(no_dust_exists))
-            else:
-                print('All dust files exist.')
-            self.features
+            print('Recognised input fields were: ' + ', '.join(all_features))
+            if not self.to_generate == []:
+                print('These dust files will be generated: ' + ', '.join(self.to_generate))
+            print('Found {0} out of {1} files.'.format(len(all_features), len(self.features)))
+            if not not_found == []:
+                print('Missing files: ' + ', '.join(not_found))
+
 
         self.features = all_features
-        self.__feature = self.features[0]
+        if not self.features == []:
+            self.__feature = self.features[0]
+        else:
+            print('Nothing to convert! Exiting.')
+            raise SystemExit(0)
 
     # ---------------------------------------------------------------------------------------------
     # Important part starts here
@@ -277,14 +320,14 @@ class DATtoRADMC:
     # Wrapper
     #
     # Wraps the whole conversion process under one function. Once all user inputs were given this function can be called and it will:
-    # 1. Setup the Directories
-    # 2. Build the Base Grid and calculates/stores the Parent Information
+    # 1. Setup the Directories.
+    # 2. Build the Base Grid and calculates/stores the Parent Information.
     # 3. Goes through all the features and performs the conversion process:
-    #     a. Prepares the converted data by reordering it and possibly mirrors/extends it
-    #     b. Writes the converted data into the RADMC3D input write_data_file
-    # 5.`If no dust file exists or force is True it generates the dust file from the gas file.
-    # 6. Checks the dimensions of the data and grid file
-    # 7. Finally writes the Grid File
+    #     a. Prepares the converted data by reordering it and possibly mirrors/extends it.
+    #     b. Writes the converted data into the RADMC3D input write_data_file.
+    # 5. If no dust file exists or force is True it generates the dust file from the gas file.
+    # 6. Checks the dimensions of the data and grid file.
+    # 7. Finally writes the Grid File.
     # ---------------------------------------------------------------------------------------------
 
     def Wrapper(self):
@@ -297,18 +340,22 @@ class DATtoRADMC:
 
         for feat in self.features:
             if not feat in self.completed:
-                print(feat)
+                print('Converting: ' + feat)
+                gen = False
+                if 'dust' + feat[3:] in self.to_generate and 'dust' + feat[3:] not in self.generated:
+                    print('Generating dust file from gas file.')
+                    gen = True
                 self.__feature = feat
                 self.ncells_filt[self.__feature] = []
                 self.ConvertFiles()
-                if (not 'dust' + feat[3:] in self.dust_exists) or self.force == True and not 'dust' in feat:
-                    self.write_data_file(generate_dust=True)
-                else:
-                    self.write_data_file()
+                self.write_data_file(generate_dust=gen)
                 self.completed.append(feat)
 
         self.write_grid_file()
-        print('Conversion Completed, converted ' + str(len(self.completed)) + '/' + str(len(self.features)))
+        print('Conversion Completed.')
+        print('Converted: ' + str(len(self.completed)) + '/' + str(len(self.features)))
+        if not self.to_generate == []:
+            print('Generated ' + str(len(self.generated)) +  '/' + str(len(self.to_generate)))
 
     # ---------------------------------------------------------------------------------------------
     # Convert Files
@@ -538,7 +585,6 @@ class DATtoRADMC:
     # Output: Reordered and extended/mirrored 1D list for that refinement layer
     # ---------------------------------------------------------------------------------------------
     def reorder_one_line(self, array, index):
-
         num_r, num_th, num_phi = self.ncells[index]
 
         reshaped_dat = np.reshape(array, [num_th, num_r, num_phi])
@@ -584,7 +630,8 @@ class DATtoRADMC:
             sigma = np.ones(len(data_coords_old))
             sigma[0] = 0.01
             sigma[-1] = 0.01
-
+            if 'dust' in self.__feature:
+                reshaped_dat *= 100.0
             # do fitting and extrapolation
             # ToDo extension if not mirrored with gaussian doesnt make sense.
             for r in range(num_r):
@@ -601,6 +648,8 @@ class DATtoRADMC:
 
                     extended_dat[:, r, phi] = th_new
 
+            if 'dust' in self.__feature:
+                extended_dat *= 100.0
             reshaped_dat = extended_dat
             num_th += 2 * self.n_extend
             # self.ncells[index][1] = num_th
@@ -698,13 +747,14 @@ class DATtoRADMC:
         array_int = np.array(array_int, dtype='int64')
 
         if generate_dust == True and 'gas' in self.__feature:
-            feat_dust = 'dust' + self.__feature[3:]
-            if 'density' in feat_dust:
+            featdust = 'dust' + self.__feature[3:]
+            feature_dust = self.out_featlist[self.featlist.index(featdust)]
+            if 'density' in featdust:
                 array_dust_dbl = array_dbl * 0.01
             else:
                 array_dust_dbl = array_dbl
-            feature_dust = self.out_featlist[self.featlist.index(feat_dust)]
-            if 'temperature' in feature_dust:
+
+            if 'temperature' in featdust:
                 outfile_dust = open(self.dataOutPath + feature_dust + '.bdat', 'wb')
             else:
                 outfile_dust = open(self.dataOutPath + feature_dust + '.binp', 'wb')
@@ -713,7 +763,7 @@ class DATtoRADMC:
                 array_int.tofile(outfile_dust)
                 array_dust_dbl.tofile(outfile_dust)
                 print(feature_dust + ' file was generated from the gas' + self.__feature[3:] + '.dat file')
-                self.completed.append(feat_dust)
+                self.generated.append(featdust)
             finally:
                 outfile_dust.close()
 
