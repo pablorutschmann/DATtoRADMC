@@ -1,6 +1,6 @@
 # JUPYTER .dat to RADMC3D input files conversion class
 
-`v1.3`
+`v1.4`
 
 Rutschmann Pablo, June 2021
 
