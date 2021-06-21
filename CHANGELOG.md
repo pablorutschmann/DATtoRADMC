@@ -1,3 +1,6 @@
+#v1.4.1
+* changed the input of the path information to just the basepath of the parent directory.
+
 #v1.4
 * actually implemented a working `force` feature with the help of a new `fetch_features` function.
 
