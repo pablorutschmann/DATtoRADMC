@@ -100,12 +100,12 @@ foo.Wrapper()
 
 With the python script `script_convert.py` you can easily run the conversion directly from the command line. The order of the parameters is the same as above. The following lists the required arguments. Note that the field list argument MUST be the final argument in the command.
 ```
-python3 script_convert.py [sim_num] [grid_levels] [ref_level] [radius] [mass]
+python3 script_convert.py [sim_num] [grid_levels] [ref_levels] [radius] [mass]
 ```
 
 or with full options:
 ```
-python3 script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
+python3 script_convert.py [sim_numb] [grid_levels] [ref_levels] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
 ```
 
 If no list of fields is given it defaults to `'all'`, which fetches all the files in the data directory.
