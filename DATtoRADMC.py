@@ -16,7 +16,7 @@ class DATtoRADMC:
 
     def __init__(self):
         # Simulation Information
-        self.outNumber = -1  # Simulation Number
+        self.SimNumber = -1  # Simulation Number
         self.nLevels = -1  # Number of Mesh Levels (with Base Grid)
         self.nRefinements = -1  # Refinement levels
         self.mirror = True  # Mirror theta axis
@@ -55,7 +55,7 @@ class DATtoRADMC:
         # Filepath information
         self.dataDir = 'notadir'  # Jupyter output folder
         self.dataOutPath = 'notapath'  # Destination Folder
-        self.inFilename = 'notaname'  # Filename constructed from __feature, outNumber and nLevels (Changes for every level)
+        self.inFilename = 'notaname'  # Filename constructed from __feature, SimNumber and nLevels (Changes for every level)
         self.descriptorName = 'notadesc'  # Name of the descriptor file
         self.BASEPATH = os.getcwd() + '/'  # Current Directory
 
@@ -94,8 +94,8 @@ class DATtoRADMC:
     # ------------------------------------------------------------------------------------------------
 
     # Basic user Set functions
-    def SetOutNumber(self, n):
-        self.outNumber = n
+    def SetSimNumber(self, n):
+        self.SimNumber = n
 
     def SetLevel(self, level):
         self.nLevels = level
@@ -125,23 +125,6 @@ class DATtoRADMC:
 
     def SetBasePath(self, path):
         self.BASEPATH = path
-
-    def SetInDir(self, path):
-        self.dataDir = path
-
-    def SetOutDir(self, path):
-        self.dataOutPath = path
-
-    def SetInFilename(self, fname):
-        self.inFilename = fname
-
-    def SetUnits(self, units):
-        ulist = ["CGS", "cgs", "AU", "Au", "au"]
-        if units in ulist:
-            self.units = units
-        else:
-            print("Please select a valid unit system.")
-        return
 
     # Science Set Functions
     def SetRadius(self, rad):
@@ -181,14 +164,14 @@ class DATtoRADMC:
     # Directory and file Setup
     def SetupDirs(self):
         # Error checking
-        if self.outNumber < 0:
+        if self.SimNumber < 0:
             print("Please set the simulation number")
             return
 
         # Create directory paths
-        self.dataDir = self.BASEPATH + "output" + str(self.outNumber).zfill(5) + "/"
-        self.dataOutPath = self.BASEPATH + "RADMC" + str(self.outNumber).zfill(5) + "/"
-        self.descriptorName = "Descriptor" + str(self.outNumber) + ".dat"
+        self.dataDir = self.BASEPATH + "output" + str(self.SimNumber).zfill(5) + "/"
+        self.dataOutPath = self.BASEPATH + "RADMC" + str(self.SimNumber).zfill(5) + "/"
+        self.descriptorName = "Descriptor" + str(self.SimNumber) + ".dat"
 
         # Check existance
         print("Data directory is: " + self.dataDir)
@@ -202,7 +185,7 @@ class DATtoRADMC:
             os.mkdir(self.dataOutPath)
 
     def SetupNames(self, level):
-        if self.outNumber < 0:
+        if self.SimNumber < 0:
             print("Please set the simulation number")
             return
         if self.__feature == 'notafeat':
@@ -212,7 +195,7 @@ class DATtoRADMC:
             print("Please input the number of mesh refinement levels")
             return
 
-        self.inFilename = self.__feature + str(self.outNumber) + "_" + str(level) + "_" + str(level) + ".dat"
+        self.inFilename = self.__feature + str(self.SimNumber) + "_" + str(level) + "_" + str(level) + ".dat"
 
         try:
             assert (os.path.isfile(self.dataDir + self.inFilename))

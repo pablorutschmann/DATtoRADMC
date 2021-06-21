@@ -131,6 +131,9 @@ dv.SetMass(args.m[0])
 if args.force is not None:
     dv.SetForce(args.force[0])
 
+if args.directory is not None:
+    dv.SetBasePath(args.d[0])
+
 #Setting the features
 if args.listoffields is not None:
     dv.SetFeatures(args.listoffields[0])

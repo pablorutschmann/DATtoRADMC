@@ -79,9 +79,9 @@ foo.SetRadius(radius)
 foo.SetMass(mass)
 ```
 
-* Setting the Filepath Information of the Jupyter Output files folder, where `filepath` is a string.
+* Setting the Filepath of the directory, in which the JUPYTER output folder is located, where `filepath` is a string.
 ```python
-foo.SetInDir(filepath)
+foo.SetBasePath(filepath)
 ```
 
 * Setting the list of hydrodynamical fields to convert, where `field_list` is a list of strings, default is `'all'`, which fetches all the features from files it can find in the data directory.
@@ -105,7 +105,7 @@ python3 script_convert.py [sim_num] [grid_levels] [ref_levels] [radius] [mass]
 
 or with full options:
 ```
-python3 script_convert.py [sim_numb] [grid_levels] [ref_levels] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
+python3 script_convert.py [sim_num] [grid_levels] [ref_levels] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
 ```
 
 If no list of fields is given it defaults to `'all'`, which fetches all the files in the data directory.
