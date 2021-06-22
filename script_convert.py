@@ -104,7 +104,7 @@ print("Converting outputs from " + str(args.o[0]).zfill(5))
 
 dv = DATtoRADMC.DATtoRADMC()
 #Setting the simulation number
-dv.SetOutNumber(args.o[0])
+dv.SetSimNumber(args.o[0])
 
 #Setting the number of layers including the base layer
 dv.SetLevel(args.n[0])
