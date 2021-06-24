@@ -8,7 +8,7 @@ from os.path import isfile, join
 
 class DATtoRADMC:
     """
-    Convert JUPYTER .DAT files to binary files for RADMC3D
+    Convert JUPITER .DAT files to binary files for RADMC3D
 
     Reads in a Descriptor.dat file and a hydrodynamic field files (.dat)
     Outputs the grid file and the converted data files
@@ -53,7 +53,7 @@ class DATtoRADMC:
         self.generated = [] # Stores the name of the generated dust features
 
         # Filepath information
-        self.dataDir = 'notadir'  # Jupyter output folder
+        self.dataDir = 'notadir'  # Jupiter output folder
         self.dataOutPath = 'notapath'  # Destination Folder
         self.inFilename = 'notaname'  # Filename constructed from __feature, SimNumber and nLevels (Changes for every level)
         self.descriptorName = 'notadesc'  # Name of the descriptor file
@@ -343,7 +343,7 @@ class DATtoRADMC:
     # ---------------------------------------------------------------------------------------------
     # Convert Files
     #
-    # Converts all Levels of Jupyter Output Data to 1D lists in the right order.
+    # Converts all Levels of Jupiter Output Data to 1D lists in the right order.
     #   1. reads in the data files for the current __feature and reshapes it into 3D-Array
     #   2. mirrors/extend the 3D-Array
     #   3. reorders each level
@@ -633,6 +633,7 @@ class DATtoRADMC:
 
             if 'dust' in self.__feature:
                 extended_dat *= 100.0
+
             reshaped_dat = extended_dat
             num_th += 2 * self.n_extend
             # self.ncells[index][1] = num_th

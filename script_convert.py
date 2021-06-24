@@ -4,7 +4,7 @@
 # python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
-# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -h [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [field_list]
 #
 # The list of fields MUST always be the final argument.
 #
@@ -43,14 +43,16 @@ parser.add_argument('g',
 #Whether to mirror the vertical axis
 parser.add_argument('-s',
                     action = 'store',
-                    nargs = 1,type = bool,
+                    nargs = 1,
+                    type = bool,
                     metavar = 'mir_bool',
                     help= 'Boolean for mirroring, default is True')
 
 #Setting the number of cells to extend
 parser.add_argument('-e',
                     action = 'store',
-                    nargs = 1,type = int,
+                    nargs = 1,
+                    type = int,
                     metavar = 'n_ext',
                     help= 'Number of cells to extend by on both sides, default is 30')
 
@@ -127,7 +129,7 @@ dv.SetRadius(args.r[0])
 #Setting the mass
 dv.SetMass(args.m[0])
 
-#Setting the parent directory of the folder with the JUPYTER output folder in it.
+#Setting the parent directory of the folder with the JUPITER output folder in it.
 if args.force is not None:
     dv.SetForce(args.force[0])
 

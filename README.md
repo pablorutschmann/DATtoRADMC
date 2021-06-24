@@ -1,4 +1,4 @@
-# JUPYTER .dat to RADMC3D input files conversion class
+# JUPITER .dat to RADMC3D input files conversion class
 
 `v1.4.1`
 
@@ -6,7 +6,7 @@ Rutschmann Pablo, June 2021
 
 rupablo@student.ethz.ch
 
-This is a class that can convert the hydrodynamical simulation output files of the JUPYTER (file format .dat) to input files for RADMC3D. It can also extend the coordinates and data files by a user set number of cells. 
+This is a class that can convert the hydrodynamical simulation output files of the JUPITER (file format .dat) to input files for RADMC3D. It can also extend the coordinates and data files by a user set number of cells. 
 
 Based on a project by Evert Nasedkin @nenasedk , 2018: [JUPITER_VTKFileConversion](https://github.com/nenasedk/JUPITER_VTKFileConversion)
 
@@ -30,7 +30,7 @@ foo = DATtoRADMC()
 
 ## Usage of the class `DATtoRADMC()`
 
-To convert the JUPYTER files, you first have to give several user inputs.
+To convert the JUPITER files, you first have to give several user inputs.
 
 ### Provide information about the simulation
 
@@ -79,7 +79,7 @@ foo.SetRadius(radius)
 foo.SetMass(mass)
 ```
 
-* Setting the Filepath of the directory, in which the JUPYTER output folder is located, where `filepath` is a string.
+* Setting the Filepath of the directory, in which the JUPITER output folder is located, where `filepath` is a string.
 ```python
 foo.SetBasePath(filepath)
 ```
