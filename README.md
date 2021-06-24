@@ -69,7 +69,7 @@ foo.SetN_ext(n_ext)
 foo.SetForce(force)
 ```
 
-* Whether to include dust evaporation, i.e. all values in dust density where the dust temperature is below 1500 Kelvin are set to 0.0. 'evap' is a boolean, default is 'True'
+* Whether to include dust evaporation, i.e. all values in dust density where the dust temperature is above 1500 Kelvin are set to 0.0. 'evap' is a boolean, default is 'True'
 ```python
 foo.SetEvap(evap)
 ```

@@ -726,7 +726,7 @@ class DATtoRADMC:
 
         if 'dustdensity' in self.__feature and self.evap == True:
             if self.dusttemperature_cache != []:
-                array_dbl = np.where(self.dusttemperature_cache < self.thresh, 0.0, array_dbl)
+                array_dbl = np.where(self.dusttemperature_cache > self.thresh, 0.0, array_dbl)
                 print('Dust evaporated.')
             else:
                 print('Dust evaporation failed! No dust temperature found.')
@@ -755,7 +755,7 @@ class DATtoRADMC:
                 # dust evaporation when generating from gas file
                 if self.evap == True:
                     if self.dusttemperature_cache != []:
-                        array_dust_dbl = np.where(self.dusttemperature_cache < self.thresh, 0.0, array_dust_dbl)
+                        array_dust_dbl = np.where(self.dusttemperature_cache > self.thresh, 0.0, array_dust_dbl)
                         print('Dust evaporated.')
                     else:
                         print('Dust evaporation failed! No dust temperature found.')
