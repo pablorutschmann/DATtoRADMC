@@ -24,6 +24,8 @@ class DATtoRADMC:
         self.features = ['all']  # All to be converted Hydrofields, default fetches all the files in the data directory.
         self.all = True  # Whether all was inputted in features.
         self.force = False  # Force the generation of dust files from gas files they dont exist. If false it only generates the dust files that dont exist.
+        self.evap = True  # Whether to include dust evaporation
+        self.thresh = 1500.0  # dust evaporation threshhold in Kelvin
         self.__feature = 'notafeat'  # Currently converted __feature, should not be accessed by user.
         self.__cur00 = 0.0
         self.nLevelCoords = []  # Number of Vertices along each axis at each refinement level [[len(phi[0]),len(r[0]),len(th[0])],[...],...]
@@ -47,10 +49,10 @@ class DATtoRADMC:
                              'dust_potential', 'dust_opacity', 'dust_erad',
                              'dust_energy', 'dust_density']
 
-        self.to_generate = [] # Stores all dust files that have to be generated.
+        self.to_generate = []  # Stores all dust files that have to be generated.
 
-        self.completed = [] # Stores the names of the completed features
-        self.generated = [] # Stores the name of the generated dust features
+        self.completed = []  # Stores the names of the completed features
+        self.generated = []  # Stores the name of the generated dust features
 
         # Filepath information
         self.dataDir = 'notadir'  # Jupiter output folder
@@ -88,6 +90,8 @@ class DATtoRADMC:
         # Caches the converted data of each layer in a list for the current feature. Is reset before converting next __feature.
         self.converted = []
 
+        self.dusttemperature_cache = []
+
         self.mins = []  # Min boundaries of a each mesh level
         self.maxs = []  # Max boundaries of a each mesh level
 
@@ -111,6 +115,9 @@ class DATtoRADMC:
 
     def SetForce(self, bool):
         self.force = bool
+
+    def SetEvap(self, bool):
+        self.evap = bool
 
     def SetFeatures(self, feats):
         if 'all' in feats:
@@ -287,7 +294,6 @@ class DATtoRADMC:
             if not not_found == []:
                 print('Missing files: ' + ', '.join(not_found))
 
-
         self.features = all_features
         if not self.features == []:
             self.__feature = self.features[0]
@@ -338,7 +344,7 @@ class DATtoRADMC:
         print('Conversion Completed.')
         print('Converted: ' + str(len(self.completed)) + '/' + str(len(self.features)))
         if not self.to_generate == []:
-            print('Generated ' + str(len(self.generated)) +  '/' + str(len(self.to_generate)))
+            print('Generated ' + str(len(self.generated)) + '/' + str(len(self.to_generate)))
 
     # ---------------------------------------------------------------------------------------------
     # Convert Files
@@ -383,6 +389,8 @@ class DATtoRADMC:
                     reordered_dat = [x * self.DENS for x in reordered_dat]
                 if ("temperature" in self.__feature):
                     reordered_dat = [x * self.TEMP for x in reordered_dat]
+
+
 
             self.converted.append(reordered_dat)
 
@@ -613,14 +621,12 @@ class DATtoRADMC:
             sigma = np.ones(len(data_coords_old))
             sigma[0] = 0.01
             sigma[-1] = 0.01
-            if 'dust' in self.__feature:
-                reshaped_dat *= 100.0
             # do fitting and extrapolation
             # ToDo extension if not mirrored with gaussian doesnt make sense.
             for r in range(num_r):
                 for phi in range(num_phi):
                     th_old = reshaped_dat[:, r, phi]
-                    p_init = [th_old.max(), 1.57, 0.01]
+                    p_init = [th_old.max(), np.mean(th_old), np.std(th_old)]
                     coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
                     th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
                     th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
@@ -631,10 +637,8 @@ class DATtoRADMC:
 
                     extended_dat[:, r, phi] = th_new
 
-            if 'dust' in self.__feature:
-                extended_dat *= 100.0
-
             reshaped_dat = extended_dat
+
             num_th += 2 * self.n_extend
             # self.ncells[index][1] = num_th
 
@@ -716,6 +720,18 @@ class DATtoRADMC:
             n_tot_filt += np.prod(self.ncells_filt[self.__feature][i])
 
         array_dbl = np.concatenate(self.converted)
+
+        if 'dusttemperature' in self.__feature and self.evap:
+            self.dusttemperature_cache = array_dbl
+
+        if 'dustdensity' in self.__feature and self.evap == True:
+            if self.dusttemperature_cache != []:
+                array_dbl = np.where(self.dusttemperature_cache < self.thresh, 0.0, array_dbl)
+                print('Dust evaporated.')
+            else:
+                print('Dust evaporation failed! No dust temperature found.')
+
+
         n_tot = len(array_dbl)
         if n_tot == n_tot_filt:
             print('Total Number of Cells match!')
@@ -735,10 +751,20 @@ class DATtoRADMC:
             feature_dust = self.out_featlist[self.featlist.index(featdust)]
             if 'density' in featdust:
                 array_dust_dbl = array_dbl * 0.01
+
+                # dust evaporation when generating from gas file
+                if self.evap == True:
+                    if self.dusttemperature_cache != []:
+                        array_dust_dbl = np.where(self.dusttemperature_cache < self.thresh, 0.0, array_dust_dbl)
+                        print('Dust evaporated.')
+                    else:
+                        print('Dust evaporation failed! No dust temperature found.')
+
             else:
                 array_dust_dbl = array_dbl
 
             if 'temperature' in featdust:
+                self.dusttemperature_cache = array_dust_dbl
                 outfile_dust = open(self.dataOutPath + feature_dust + '.bdat', 'wb')
             else:
                 outfile_dust = open(self.dataOutPath + feature_dust + '.binp', 'wb')

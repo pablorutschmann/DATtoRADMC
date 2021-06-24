@@ -1,6 +1,6 @@
 # JUPITER .dat to RADMC3D input files conversion class
 
-`v1.4.1`
+`v1.5`
 
 Rutschmann Pablo, June 2021
 
@@ -67,6 +67,11 @@ foo.SetN_ext(n_ext)
 
 ```python
 foo.SetForce(force)
+```
+
+* Whether to include dust evaporation, i.e. all values in dust density where the dust temperature is below 1500 Kelvin are set to 0.0. 'evap' is a boolean, default is 'True'
+```python
+foo.SetEvap(evap)
 ```
 
 * Setting the orbital radius of the planet in Au, where `radius` is a float.

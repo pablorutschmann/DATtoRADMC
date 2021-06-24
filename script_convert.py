@@ -4,7 +4,7 @@
 # python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
-# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -v [dustevaopration] -l [field_list]
 #
 # The list of fields MUST always be the final argument.
 #
@@ -88,6 +88,13 @@ parser.add_argument('-f',
 		            required = False,
                     help= 'If True it ignores the found dust files and generates them form the gas files. If False it generates only the dust files that have no data file.')
 
+parser.add_argument('-v',
+                    '--vaporation',
+                    action = 'store',
+                    type = bool,
+                    nargs = 1,
+		            required = False,
+                    help='Boolean for inclusion of dust evaporation')
 
 parser.add_argument('-l',
                     '--listoffields',
@@ -129,9 +136,13 @@ dv.SetRadius(args.r[0])
 #Setting the mass
 dv.SetMass(args.m[0])
 
-#Setting the parent directory of the folder with the JUPITER output folder in it.
+#Setting whether to force the generation of the dust files
 if args.force is not None:
     dv.SetForce(args.force[0])
+
+#Setting whether to include dust evaporation
+if args.vaporation is not None:
+    dv.SetEvap(args.vaporation[0])
 
 if args.directory is not None:
     dv.SetBasePath(args.d[0])

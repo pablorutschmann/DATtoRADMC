@@ -1,3 +1,7 @@
+#v1.5
+* changed the initial parameters of the gaussian fit to estimators: max , mean and standart deviation.
+* added dust evaporation feature
+
 #v1.4.1
 * changed the input of the path information to just the basepath of the parent directory.
 
