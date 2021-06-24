@@ -416,8 +416,8 @@ class DATtoRADMC:
             for j, line in enumerate(dsc):
                 if j == 6 + (i * 11):
                     n_phi, n_r, n_th = [int(x) for x in line.split()]
-                    if i == 0 and n_r % 2 == 1:
-                        self.oddR = True
+                    #if i == 0 and n_r % 2 == 1:
+                        #self.oddR = True
                     self.ncells.append([n_r, n_th, n_phi])
                 # Invert theta, phi so that coordinate system is right handed
                 # (needed for cell orientation)
@@ -435,7 +435,7 @@ class DATtoRADMC:
                     # print(cur)
                     # print('Cur + pi: ')
                     # print([x - self.__cur00 for x in cur])
-                    phi.append([x - self.__cur00 for x in cur])
+                    phi.append([np.float32(x - self.__cur00) for x in cur])
                     cur = []
                 if j == 9 + (i * 11):
                     cur = [np.float64(x) for x in line.split()]
@@ -446,7 +446,7 @@ class DATtoRADMC:
                         cur.pop(0)
                     cur.pop()
                     cur.pop()
-                    cur_scaled = [np.float64(x * (self.rcgs.value)) for x in cur]
+                    cur_scaled = [np.float32(x * (self.rcgs.value)) for x in cur]
                     r.append(cur_scaled)
                     cur = []
                 if j == 10 + (i * 11):
@@ -455,7 +455,7 @@ class DATtoRADMC:
                     cur.pop(0)
                     cur.pop()
                     cur.pop()
-                    th.append((self.extend_th_coords(cur, i)))
+                    th.append(([np.float32(item) for item in self.extend_th_coords(cur, i)]))
                     cur = []
             self.nLevelCoords.append([len(phi[i]), len(r[i]), len(th[i])])
 
@@ -613,14 +613,12 @@ class DATtoRADMC:
             sigma = np.ones(len(data_coords_old))
             sigma[0] = 0.01
             sigma[-1] = 0.01
-            if 'dust' in self.__feature:
-                reshaped_dat *= 100.0
             # do fitting and extrapolation
             # ToDo extension if not mirrored with gaussian doesnt make sense.
             for r in range(num_r):
                 for phi in range(num_phi):
                     th_old = reshaped_dat[:, r, phi]
-                    p_init = [th_old.max(), 1.57, 0.01]
+                    p_init = [1, np.mean(th_old), np.std(th_old)]
                     coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
                     th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
                     th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
@@ -630,9 +628,6 @@ class DATtoRADMC:
                         th_new = np.concatenate([th_new_bottom, th_old])
 
                     extended_dat[:, r, phi] = th_new
-
-            if 'dust' in self.__feature:
-                extended_dat *= 100.0
 
             reshaped_dat = extended_dat
             num_th += 2 * self.n_extend
@@ -669,6 +664,18 @@ class DATtoRADMC:
         return reordered
 
     # ---------------------------------------------------------------------------------------------
+    # list_of_padded
+    # This function creates a list of padded, with spaces strings to the specified number of places
+    # ---------------------------------------------------------------------------------------------
+    def pad(self,n,list, sci = False):
+        if sci == True:
+            padded_string_list = ["{:e}".format(item).rjust(n, ' ') for item in list]
+        else:
+            padded_string_list = [str(item).rjust(n, ' ') for item in list]
+
+        return padded_string_list
+
+    # ---------------------------------------------------------------------------------------------
     # write_grid_file
     # This function is used in Wrapper
     # writes out the amr_grid.imp file
@@ -678,23 +685,24 @@ class DATtoRADMC:
         outfile = open(self.dataOutPath + 'amr_grid.inp', 'w')
         try:
             # ToDo Add iputs for first few lines
-            outfile.write('1' + '\n')
+            outfile.write('1'.rjust(8, ' ') + '\n')
             if self.nLevels == 0:
-                outfile.write('0' + '\n')
+                outfile.write('0'.rjust(8, ' ') + '\n')
             else:
-                outfile.write('10' + '\n')
-            outfile.write('100' + '\n')
-            outfile.write('0 \n')
-            outfile.write('1 1 1' + '\n')
-            outfile.write(" ".join(str(item) for item in self.ncells_filt[self.features[0]][0]))
+                outfile.write('10'.rjust(8, ' ') + '\n')
+            outfile.write('100'.rjust(8, ' ') + '\n')
+            outfile.write('0'.rjust(8, ' ') + '\n')
+            outfile.write('1'.rjust(8, ' ') + '1'.rjust(8, ' ') + '1'.rjust(8, ' ') + '\n')
+            outfile.write("".join(item for item in self.pad(8,self.ncells_filt[self.features[0]][0])))
             outfile.write('\n')
             if self.nLevels > 1:
-                outfile.write(f'{self.nLevels - 1} {self.nRefinements}\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['r'][0]))
+                outfile.write(''.join(item for item in self.pad(8, [self.nLevels - 1, self.nRefinements])))
             outfile.write('\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['th'][0]))
+            outfile.write("".join(str(item) for item in self.pad(13,self.LevelCoords['r'][0],sci = True)))
             outfile.write('\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['phi'][0]))
+            outfile.write("".join(str(item) for item in self.pad(13,self.LevelCoords['th'][0])))
+            outfile.write('\n')
+            outfile.write("".join(str(item) for item in self.pad(13,self.LevelCoords['phi'][0])))
             outfile.write('\n')
             if self.nLevels > 1:
                 for i in range(len(self.pi_r['first shared'])):
