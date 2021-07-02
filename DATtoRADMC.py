@@ -237,7 +237,10 @@ class DATtoRADMC:
                             if item in combined:
                                 all_features.append(item)
                                 self.to_generate.append('dust' + item[3:])
-                                self.features.remove('dust' + item[3:])
+                                try:
+                                    self.features.remove('dust' + item[3:])
+                                except:
+                                    pass
                             else:
                                 print(item + ' data file was not found!')
                                 not_found.append(item)
@@ -410,13 +413,18 @@ class DATtoRADMC:
         th = []
         self.ncells = []
 
+        def round_sig(f,p):
+            ar = np.array([f])
+            ar = ar.astype(np.float64)
+            num = ar[0]
+            return np.float64(('%.' + str(p) + 'g') % num)
+        #round_sig = lambda f, p: (('%.' + str(p) + 'g') % [f].astype(np.float64)[0]).astype(np.float64)
+
         if self.nLevels < 0:
             raise Exception('Please set the number of mesh levels!')
 
         if self.nRefinements < 0:
             raise Exception('Please set the number of refinement levels!')
-
-        dsc = open(self.dataDir + self.descriptorName)
 
         for i in range(self.nLevels):
             self.SetupNames(i)
@@ -430,7 +438,8 @@ class DATtoRADMC:
                 # Invert theta, phi so that coordinate system is right handed
                 # (needed for cell orientation)
                 if j == 8 + (i * 11):
-                    cur = [np.float64(x) for x in line.split()]  # Import one line into list of values
+
+                    cur = [round_sig(x,self.precis) for x in line.split()]  # Import one line into list of values
                     cur.pop(0)  # First and last two points are 'ghost points'
                     cur.pop(0)
                     cur.pop()
@@ -446,7 +455,7 @@ class DATtoRADMC:
                     phi.append([x - self.__cur00 for x in cur])
                     cur = []
                 if j == 9 + (i * 11):
-                    cur = [np.float64(x) for x in line.split()]
+                    cur = [round_sig(x,self.precis) for x in line.split()]
                     cur.pop(0)  # First and last two points are 'ghost points'
                     cur.pop(0)
                     # pop first radial vertice for odd number of cells
@@ -454,7 +463,7 @@ class DATtoRADMC:
                         cur.pop(0)
                     cur.pop()
                     cur.pop()
-                    cur_scaled = [np.float64(x * (self.rcgs.value)) for x in cur]
+                    cur_scaled = [round_sig(x * (self.rcgs.value),self.precis) for x in cur]
                     r.append(cur_scaled)
                     cur = []
                 if j == 10 + (i * 11):
@@ -623,10 +632,11 @@ class DATtoRADMC:
             sigma[-1] = 0.01
             # do fitting and extrapolation
             # ToDo extension if not mirrored with gaussian doesnt make sense.
+            i = 0
             for r in range(num_r):
                 for phi in range(num_phi):
                     th_old = reshaped_dat[:, r, phi]
-                    p_init = [th_old.max(), np.mean(th_old), np.std(th_old)]
+                    p_init = [th_old.max(), np.mean(data_coords_old), np.std(data_coords_old)]
                     coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
                     th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
                     th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
@@ -635,6 +645,14 @@ class DATtoRADMC:
                     else:
                         th_new = np.concatenate([th_new_bottom, th_old])
 
+                    # if i % 10000 == 0:
+                    #     from matplotlib import pyplot
+                    #     fitx = np.linspace(data_coords_old[1],data_coords_old[-2],1000)
+                    #
+                    #     pyplot.scatter(data_coords_old,th_old)
+                    #     pyplot.scatter(fitx,g(fitx, coeff[0], coeff[1], coeff[2]))
+                    #     pyplot.show()
+                    # i += 1
                     extended_dat[:, r, phi] = th_new
 
             reshaped_dat = extended_dat
@@ -681,29 +699,27 @@ class DATtoRADMC:
     def write_grid_file(self):
         outfile = open(self.dataOutPath + 'amr_grid.inp', 'w')
         try:
-            # ToDo Add iputs for first few lines
             outfile.write('1' + '\n')
-            if self.nLevels == 0:
+            if self.nLevels == 1:
                 outfile.write('0' + '\n')
             else:
                 outfile.write('10' + '\n')
-            outfile.write('100' + '\n')
-            outfile.write('0 \n')
+            outfile.write('111' + '\n')
+            outfile.write('0\n')
             outfile.write('1 1 1' + '\n')
             outfile.write(" ".join(str(item) for item in self.ncells_filt[self.features[0]][0]))
             outfile.write('\n')
             if self.nLevels > 1:
                 outfile.write(f'{self.nLevels - 1} {self.nRefinements}\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['r'][0]))
+            outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['r'][0]))
             outfile.write('\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['th'][0]))
+            outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['th'][0]))
             outfile.write('\n')
-            outfile.write(" ".join(str(item) for item in self.LevelCoords['phi'][0]))
+            outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['phi'][0]))
             outfile.write('\n')
             if self.nLevels > 1:
                 for i in range(len(self.pi_r['first shared'])):
-                    outfile.write(
-                        f'{str(i)} {str(self.pi_r["first shared"][i])} {str(self.pi_th["first shared"][i])} {str(self.pi_phi["first shared"][i])} {str(self.pi_r["sizes"][i])} {str(self.pi_th["sizes"][i])} {str(self.pi_phi["sizes"][i])}\n')
+                    outfile.write(f'{str(i)} {str(self.pi_r["first shared"][i])} {str(self.pi_th["first shared"][i])} {str(self.pi_phi["first shared"][i])} {str(self.pi_r["sizes"][i])} {str(self.pi_th["sizes"][i])} {str(self.pi_phi["sizes"][i])} \n')
 
         finally:
             outfile.close()
@@ -724,6 +740,7 @@ class DATtoRADMC:
         if 'dusttemperature' in self.__feature and self.evap:
             self.dusttemperature_cache = array_dbl
 
+        #dust evaporation
         if 'dustdensity' in self.__feature and self.evap == True:
             if self.dusttemperature_cache != []:
                 array_dbl = np.where(self.dusttemperature_cache > self.thresh, 0.0, array_dbl)
