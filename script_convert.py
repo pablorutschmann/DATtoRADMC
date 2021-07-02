@@ -4,7 +4,7 @@
 # python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
-# python script_convert.py [sim_number] [grid_level] [ref_level] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -v [dustevaopration] -l [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level]  [radius] [mass] -s [mir] -e [n_ext] -v [dustevaopration] -f [force]-d [directory] -l [field_list]
 #
 # The list of fields MUST always be the final argument.
 #

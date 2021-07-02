@@ -8,3 +8,10 @@ plotting.py
 write.py
 RADMC00244/
 output00244/
+output00199/
+RADMC00111/
+RADMC00199/
+output00111/
+writer.py
+reader.py
+amr_grid_good.inp
