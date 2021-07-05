@@ -4,6 +4,7 @@ from scipy.optimize import curve_fit
 import astropy.units as u
 from os import listdir
 from os.path import isfile, join
+from math import floor
 
 
 class DATtoRADMC:
@@ -24,6 +25,7 @@ class DATtoRADMC:
         self.features = ['all']  # All to be converted Hydrofields, default fetches all the files in the data directory.
         self.all = True  # Whether all was inputted in features.
         self.force = False  # Force the generation of dust files from gas files they dont exist. If false it only generates the dust files that dont exist.
+        self.binary = True # Whether tp write the data files in binary or in ascii, default is True, i.e. binary
         self.evap = True  # Whether to include dust evaporation
         self.thresh = 1500.0  # dust evaporation threshhold in Kelvin
         self.__feature = 'notafeat'  # Currently converted __feature, should not be accessed by user.
@@ -115,6 +117,9 @@ class DATtoRADMC:
 
     def SetForce(self, bool):
         self.force = bool
+
+    def SetBinary(self, bool):
+        self.binary = bool
 
     def SetEvap(self, bool):
         self.evap = bool
@@ -340,7 +345,10 @@ class DATtoRADMC:
                 self.__feature = feat
                 self.ncells_filt[self.__feature] = []
                 self.ConvertFiles()
-                self.write_data_file(generate_dust=gen)
+                if self.binary == True:
+                    self.write_data_binary(generate_dust=gen)
+                elif self.binary == False:
+                    self.write_data_ascii(generate_dust=gen)
                 self.completed.append(feat)
 
         self.write_grid_file()
@@ -413,11 +421,12 @@ class DATtoRADMC:
         th = []
         self.ncells = []
 
-        def round_sig(f,p):
+        def round_sig(f, p):
             ar = np.array([f])
             ar = ar.astype(np.float64)
             num = ar[0]
             return np.float64(('%.' + str(p) + 'g') % num)
+
         #round_sig = lambda f, p: (('%.' + str(p) + 'g') % [f].astype(np.float64)[0]).astype(np.float64)
 
         if self.nLevels < 0:
@@ -439,23 +448,17 @@ class DATtoRADMC:
                 # (needed for cell orientation)
                 if j == 8 + (i * 11):
 
-                    cur = [round_sig(x,self.precis) for x in line.split()]  # Import one line into list of values
+                    cur = [np.float64(x) for x in line.split()]  # Import one line into list of values
                     cur.pop(0)  # First and last two points are 'ghost points'
                     cur.pop(0)
                     cur.pop()
                     cur.pop()
                     if i == 0:
                         self.__cur00 = cur[0]
-                        # print(round(cur[0] + np.pi,8))
-                    # shift by pi
-                    # print('Cur: ')
-                    # print(cur)
-                    # print('Cur + pi: ')
-                    # print([x - self.__cur00 for x in cur])
                     phi.append([x - self.__cur00 for x in cur])
                     cur = []
                 if j == 9 + (i * 11):
-                    cur = [round_sig(x,self.precis) for x in line.split()]
+                    cur = [np.float64(x) for x in line.split()]
                     cur.pop(0)  # First and last two points are 'ghost points'
                     cur.pop(0)
                     # pop first radial vertice for odd number of cells
@@ -463,7 +466,7 @@ class DATtoRADMC:
                         cur.pop(0)
                     cur.pop()
                     cur.pop()
-                    cur_scaled = [round_sig(x * (self.rcgs.value),self.precis) for x in cur]
+                    cur_scaled = [np.float64(x) * self.rcgs.value for x in cur]
                     r.append(cur_scaled)
                     cur = []
                 if j == 10 + (i * 11):
@@ -526,9 +529,6 @@ class DATtoRADMC:
                         smallest_diff = np.abs(n_coords[i - 1][j] - n_coords[i][0])
                 # +1 because radmc3d counts index from 1
                 first_shared = closest_index + 1
-                # first_shared = np.argmin(np.abs(n_coords[i - 1] - n_coords[i][0]))+1
-                # print(n_coords)
-                # FIXED: Iterate from Back for th centered around 0
                 smallest_diff = np.abs(n_coords[i - 1][-1] - n_coords[i][-1])
                 closest_index = len(n_coords[i - 1]) - 1
                 for j, item in reversed(list(enumerate(n_coords[i - 1][0:-1]))):
@@ -626,13 +626,12 @@ class DATtoRADMC:
                 extended_dat = np.zeros((num_th + self.n_extend, num_r, num_phi))
 
             # fixing the boundaries to be continous
-
             sigma = np.ones(len(data_coords_old))
             sigma[0] = 0.01
             sigma[-1] = 0.01
-            # do fitting and extrapolation
+
             # ToDo extension if not mirrored with gaussian doesnt make sense.
-            i = 0
+            # do fitting and extrapolation
             for r in range(num_r):
                 for phi in range(num_phi):
                     th_old = reshaped_dat[:, r, phi]
@@ -645,20 +644,11 @@ class DATtoRADMC:
                     else:
                         th_new = np.concatenate([th_new_bottom, th_old])
 
-                    # if i % 10000 == 0:
-                    #     from matplotlib import pyplot
-                    #     fitx = np.linspace(data_coords_old[1],data_coords_old[-2],1000)
-                    #
-                    #     pyplot.scatter(data_coords_old,th_old)
-                    #     pyplot.scatter(fitx,g(fitx, coeff[0], coeff[1], coeff[2]))
-                    #     pyplot.show()
-                    # i += 1
                     extended_dat[:, r, phi] = th_new
 
             reshaped_dat = extended_dat
 
             num_th += 2 * self.n_extend
-            # self.ncells[index][1] = num_th
 
         if self.n_extend > 0 and index == 0 and not 'density' in self.__feature:
             temp_top = reshaped_dat[-1, :, :]
@@ -680,8 +670,6 @@ class DATtoRADMC:
         else:
             print('Check Failed: Cell Numbers dont match!')
 
-        # self.ncells[index] = [n_r,n_th,n_phi]
-
         reordered = []
         for k in range(num_phi):
             for i in range(num_th):
@@ -697,6 +685,7 @@ class DATtoRADMC:
     # ---------------------------------------------------------------------------------------------
 
     def write_grid_file(self):
+
         outfile = open(self.dataOutPath + 'amr_grid.inp', 'w')
         try:
             outfile.write('1' + '\n')
@@ -713,14 +702,36 @@ class DATtoRADMC:
                 outfile.write(f'{self.nLevels - 1} {self.nRefinements}\n')
             outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['r'][0]))
             outfile.write('\n')
-            outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['th'][0]))
+
+            new_th_list = [('%.' + str(self.precis) + 'g') % item for item in self.LevelCoords['th'][0]]
+            if self.mirror == True:
+                middle_index = floor(len(new_th_list)/2)
+                new_th_list[middle_index] = str(1.57079632679489661923132169164)
+
+            elif self.mirror == False:
+                new_th_list[-1] = str(1.57079632679489661923132169164)
+
+            outfile.write(" ".join(item for item in new_th_list))
+
             outfile.write('\n')
-            outfile.write(" ".join((('%.' + str(self.precis) + 'g') % item) for item in self.LevelCoords['phi'][0]))
+
+
+            def round_down(arr):
+                num = np.array(arr) * 100000
+                num = np.trunc(num)
+                num = num / 100000
+
+                return num.tolist()
+
+            outfile.write(" ".join(str(item) for item in round_down(self.LevelCoords['phi'][0])))
+
             outfile.write('\n')
+
             if self.nLevels > 1:
                 for i in range(len(self.pi_r['first shared'])):
                     outfile.write(f'{str(i)} {str(self.pi_r["first shared"][i])} {str(self.pi_th["first shared"][i])} {str(self.pi_phi["first shared"][i])} {str(self.pi_r["sizes"][i])} {str(self.pi_th["sizes"][i])} {str(self.pi_phi["sizes"][i])} \n')
-
+        except:
+            print('Writing grid file failed!')
         finally:
             outfile.close()
 
@@ -730,7 +741,7 @@ class DATtoRADMC:
     # writes out the data file for the current __feature
     # ---------------------------------------------------------------------------------------------
 
-    def write_data_file(self, generate_dust=False):
+    def write_data_binary(self, generate_dust=False):
         n_tot_filt = 0
         for i in range(len(self.ncells_filt[self.__feature])):
             n_tot_filt += np.prod(self.ncells_filt[self.__feature][i])
@@ -759,7 +770,7 @@ class DATtoRADMC:
             print('n_tot: ' + str(n_tot))
             print('n_tot_filt: ' + str(n_tot_filt))
 
-        array_int = [1, self.precis, n_tot, self.nrspec]
+        array_int = [1, n_tot, self.nrspec]
         # long integer
         array_int = np.array(array_int, dtype='int64')
 
@@ -804,6 +815,87 @@ class DATtoRADMC:
         try:
             array_int.tofile(outfile)
             array_dbl.tofile(outfile)
+
+        finally:
+            outfile.close()
+
+    def write_data_ascii(self, generate_dust=False):
+
+        n_tot_filt = 0
+        for i in range(len(self.ncells_filt[self.__feature])):
+            n_tot_filt += np.prod(self.ncells_filt[self.__feature][i])
+
+        array_dbl = np.concatenate(self.converted)
+
+        if 'dusttemperature' in self.__feature and self.evap:
+            self.dusttemperature_cache = array_dbl
+
+        #dust evaporation
+        if 'dustdensity' in self.__feature and self.evap == True:
+            if self.dusttemperature_cache != []:
+                array_dbl = np.where(self.dusttemperature_cache > self.thresh, 0.0, array_dbl)
+                print('Dust evaporated.')
+            else:
+                print('Dust evaporation failed! No dust temperature found.')
+
+
+        n_tot = len(array_dbl)
+        if n_tot == n_tot_filt:
+            print('Total Number of Cells match!')
+            print('n_tot: ' + str(n_tot))
+            print('n_tot_filt: ' + str(n_tot_filt))
+        else:
+            print('Error: Total Number of Cells dont match!')
+            print('n_tot: ' + str(n_tot))
+            print('n_tot_filt: ' + str(n_tot_filt))
+
+        array_int = [1, n_tot, self.nrspec]
+        # long integer
+        array_int = np.array(array_int, dtype='int64')
+
+        if generate_dust == True and 'gas' in self.__feature:
+            featdust = 'dust' + self.__feature[3:]
+            feature_dust = self.out_featlist[self.featlist.index(featdust)]
+            if 'density' in featdust:
+                array_dust_dbl = array_dbl * 0.01
+
+                # dust evaporation when generating from gas file
+                if self.evap == True:
+                    if self.dusttemperature_cache != []:
+                        array_dust_dbl = np.where(self.dusttemperature_cache > self.thresh, 0.0, array_dust_dbl)
+                        print('Dust evaporated.')
+                    else:
+                        print('Dust evaporation failed! No dust temperature found.')
+
+            else:
+                array_dust_dbl = array_dbl
+
+            if 'temperature' in featdust:
+                self.dusttemperature_cache = array_dust_dbl
+                outfile_dust = open(self.dataOutPath + feature_dust + '.dat', 'w')
+            else:
+                outfile_dust = open(self.dataOutPath + feature_dust + '.inp', 'w')
+
+            try:
+                outfile_dust.write("\n".join(str(item) for item in array_int))
+                outfile_dust.write('\n')
+                outfile_dust.write("\n".join((('%.' + str(self.precis) + 'g') % item) for item in array_dust_dbl))
+                print(feature_dust + ' file was generated from the gas' + self.__feature[3:] + '.dat file')
+                self.generated.append(featdust)
+            finally:
+                outfile_dust.close()
+
+        array_dbl = np.array(array_dbl, dtype='float64')
+        feature = self.out_featlist[self.featlist.index(self.__feature)]
+        if 'temperature' in self.__feature:
+            outfile = open(self.dataOutPath + feature + '.dat', 'w')
+        else:
+            outfile = open(self.dataOutPath + feature + '.inp', 'w')
+
+        try:
+            outfile.write("\n".join(str(item) for item in array_int))
+            outfile.write('\n')
+            outfile.write("\n".join((('%.' + str(self.precis) + 'g') % item) for item in array_dbl))
 
         finally:
             outfile.close()

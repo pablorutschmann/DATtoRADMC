@@ -1,6 +1,6 @@
 # JUPITER .dat to RADMC3D input files conversion class
 
-`v1.5`
+`v1.6`
 
 Rutschmann Pablo, June 2021
 
@@ -69,6 +69,12 @@ foo.SetN_ext(n_ext)
 foo.SetForce(force)
 ```
 
+* Whether to write the data files in binary format, where `binary` is a boolean, default is `True`. If `False`, the data files will be written in formatted ascii format.
+
+```python
+foo.SetBinary(binary)
+```
+
 * Whether to include dust evaporation, i.e. all values in dust density where the dust temperature is above 1500 Kelvin are set to 0.0. 'evap' is a boolean, default is 'True'
 ```python
 foo.SetEvap(evap)
@@ -110,7 +116,8 @@ python3 script_convert.py [sim_num] [grid_levels] [ref_levels] [radius] [mass]
 
 or with full options:
 ```
-python3 script_convert.py [sim_num] [grid_levels] [ref_levels] -s [mir] -e [n_ext] [radius] [mass] -d [directory] -f [force] -l [list_fields]
+python3 script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass] -s [mir] -e [n_ext] -v [dustevaopration] -f [force] -b [binary] -d [directory] -l [field_list]
+
 ```
 
 If no list of fields is given it defaults to `'all'`, which fetches all the files in the data directory.
@@ -154,5 +161,7 @@ For all the other fields the extension works by copying the lowest and highest t
 * create pip install functionality
 
 * update the gaussian fit if dust density is to be converted. 
+
+* gaussian fit even if not mirrored
 
 ## License

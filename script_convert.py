@@ -4,7 +4,7 @@
 # python script_convert.py [sim_number] [grid_level] [ref_level] [radius] [mass]
 #
 # with optional arguments:
-# python script_convert.py [sim_number] [grid_level] [ref_level]  [radius] [mass] -s [mir] -e [n_ext] -v [dustevaopration] -f [force]-d [directory] -l [field_list]
+# python script_convert.py [sim_number] [grid_level] [ref_level]  [radius] [mass] -s [mir] -e [n_ext] -v [dustevaopration] -f [force] -b [binary] -d [directory] -l [field_list]
 #
 # The list of fields MUST always be the final argument.
 #
@@ -88,6 +88,14 @@ parser.add_argument('-f',
 		            required = False,
                     help= 'If True it ignores the found dust files and generates them form the gas files. If False it generates only the dust files that have no data file.')
 
+parser.add_argument('-b',
+                    '--binary',
+                    action = 'store',
+                    type = bool,
+                    nargs = 1,
+		            required = False,
+                    help= 'If True it writes the data files in binary format, else in formatted ascii. Default is True')
+
 parser.add_argument('-v',
                     '--vaporation',
                     action = 'store',
@@ -139,6 +147,10 @@ dv.SetMass(args.m[0])
 #Setting whether to force the generation of the dust files
 if args.force is not None:
     dv.SetForce(args.force[0])
+
+#Setting whether to write data files in binary or in ascii
+if args.binary is not None:
+    dv.SetBinary(args.binary[0])
 
 #Setting whether to include dust evaporation
 if args.vaporation is not None:
