@@ -15,3 +15,7 @@ output00111/
 writer.py
 reader.py
 amr_grid_good.inp
+amr_grid_floor.inp
+main244.py
+testing_write.dat
+wavelength_micron.inp
