@@ -5,6 +5,7 @@ import astropy.units as u
 from os import listdir
 from os.path import isfile, join
 from math import floor
+from tqdm import tqdm
 
 
 class DATtoRADMC:
@@ -25,7 +26,7 @@ class DATtoRADMC:
         self.features = ['all']  # All to be converted Hydrofields, default fetches all the files in the data directory.
         self.all = True  # Whether all was inputted in features.
         self.force = False  # Force the generation of dust files from gas files they dont exist. If false it only generates the dust files that dont exist.
-        self.binary = True # Whether tp write the data files in binary or in ascii, default is True, i.e. binary
+        self.binary = True # Whether to write the data files in binary or in ascii, default is True, i.e. binary
         self.evap = True  # Whether to include dust evaporation
         self.thresh = 1500.0  # dust evaporation threshhold in Kelvin
         self.__feature = 'notafeat'  # Currently converted __feature, should not be accessed by user.
@@ -347,7 +348,7 @@ class DATtoRADMC:
                 self.ConvertFiles()
                 if self.binary == True:
                     self.write_data_binary(generate_dust=gen)
-                elif self.binary == False:
+                else:
                     self.write_data_ascii(generate_dust=gen)
                 self.completed.append(feat)
 
@@ -627,24 +628,36 @@ class DATtoRADMC:
 
             # fixing the boundaries to be continous
             sigma = np.ones(len(data_coords_old))
-            sigma[0] = 0.01
-            sigma[-1] = 0.01
+            # sigma[0] = 0.01
+            # sigma[-1] = 0.01
 
             # ToDo extension if not mirrored with gaussian doesnt make sense.
             # do fitting and extrapolation
-            for r in range(num_r):
-                for phi in range(num_phi):
-                    th_old = reshaped_dat[:, r, phi]
-                    p_init = [th_old.max(), np.mean(data_coords_old), np.std(data_coords_old)]
-                    coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
-                    th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
-                    th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
-                    if self.mirror == True:
-                        th_new = np.concatenate([th_new_bottom, th_old, th_new_top])
-                    else:
-                        th_new = np.concatenate([th_new_bottom, th_old])
 
-                    extended_dat[:, r, phi] = th_new
+            for r in tqdm(range(num_r)):
+                for phi in range(num_phi):
+                    try:
+                        th_old = reshaped_dat[:, r, phi]
+                        # p_init = [th_old.max(), np.mean(data_coords_old), np.std(data_coords_old)]
+                        p_init = [th_old.max(), np.pi/2., 0.035]
+                        coeff, cov = curve_fit(g, data_coords_old, th_old, p0=p_init, sigma=sigma, maxfev=3000)
+                        th_new_bottom = g(data_coords_new[:self.n_extend], coeff[0], coeff[1], coeff[2])
+                        th_new_top = g(data_coords_new[-self.n_extend:], coeff[0], coeff[1], coeff[2])
+                        if self.mirror == True:
+                            th_new = np.concatenate([th_new_bottom, th_old, th_new_top])
+                        else:
+                            th_new = np.concatenate([th_new_bottom, th_old])
+
+                        extended_dat[:, r, phi] = th_new
+
+                    except:
+                        val_top = reshaped_dat[-1, r, phi]
+                        val_bot = reshaped_dat[0, r, phi]
+                        array_top = np.full(self.n_extend,val_top)
+                        array_bot = np.full(self.n_extend, val_bot)
+                        extended_dat[:, r, phi] = np.concatenate([array_bot, reshaped_dat[:, r, phi], array_top])
+
+
 
             reshaped_dat = extended_dat
 
@@ -770,7 +783,7 @@ class DATtoRADMC:
             print('n_tot: ' + str(n_tot))
             print('n_tot_filt: ' + str(n_tot_filt))
 
-        array_int = [1, n_tot, self.nrspec]
+        array_int = [1, self.precis, n_tot, self.nrspec]
         # long integer
         array_int = np.array(array_int, dtype='int64')
 
@@ -798,6 +811,7 @@ class DATtoRADMC:
                 outfile_dust = open(self.dataOutPath + feature_dust + '.binp', 'wb')
 
             try:
+                print('Writing generated dust data in binary...')
                 array_int.tofile(outfile_dust)
                 array_dust_dbl.tofile(outfile_dust)
                 print(feature_dust + ' file was generated from the gas' + self.__feature[3:] + '.dat file')
@@ -813,8 +827,10 @@ class DATtoRADMC:
             outfile = open(self.dataOutPath + feature + '.binp', 'wb')
 
         try:
+            print('Writing in binary...')
             array_int.tofile(outfile)
             array_dbl.tofile(outfile)
+            print('Done.')
 
         finally:
             outfile.close()
@@ -877,6 +893,7 @@ class DATtoRADMC:
                 outfile_dust = open(self.dataOutPath + feature_dust + '.inp', 'w')
 
             try:
+                print('Writing generated dust data in ascii...')
                 outfile_dust.write("\n".join(str(item) for item in array_int))
                 outfile_dust.write('\n')
                 outfile_dust.write("\n".join((('%.' + str(self.precis) + 'g') % item) for item in array_dust_dbl))
@@ -893,9 +910,11 @@ class DATtoRADMC:
             outfile = open(self.dataOutPath + feature + '.inp', 'w')
 
         try:
+            print('Writing in ascii...')
             outfile.write("\n".join(str(item) for item in array_int))
             outfile.write('\n')
-            outfile.write("\n".join((('%.' + str(self.precis) + 'g') % item) for item in array_dbl))
+            outfile.write("\n".join(('%.' + str(self.precis) + 'g') % item for item in array_dbl))
 
         finally:
             outfile.close()
+            print('Done.')

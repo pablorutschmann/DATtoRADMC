@@ -1,3 +1,8 @@
+#v1.6
+* truncated the vertices to 5 paces after the comma for the phi direction. Last vertice is now exactly 2 pi of RADMC3D.
+* hardcoded the half pi in the theta axis with the exact value according to RADMC3D
+* New feature: Writing data files in ascii.
+
 #v1.5
 * changed the initial parameters of the gaussian fit to estimators: max , mean and standart deviation.
 * added dust evaporation feature

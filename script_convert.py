@@ -16,6 +16,17 @@ import argparse
 import sys
 import string
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description='dat to RADMC3D file conversion')
 
 # Output numbers
@@ -44,7 +55,7 @@ parser.add_argument('g',
 parser.add_argument('-s',
                     action = 'store',
                     nargs = 1,
-                    type = bool,
+                    type = str2bool,
                     metavar = 'mir_bool',
                     help= 'Boolean for mirroring, default is True')
 
@@ -83,26 +94,27 @@ parser.add_argument('-d',
 parser.add_argument('-f',
                     '--force',
                     action = 'store',
-                    type = bool,
+                    type = str2bool,
                     nargs = 1,
 		            required = False,
                     help= 'If True it ignores the found dust files and generates them form the gas files. If False it generates only the dust files that have no data file.')
 
+parser.add_argument('-v',
+                    '--vaporation',
+                    action = 'store',
+                    type = str2bool,
+                    nargs = 1,
+		            required = False,
+                    help='Boolean for inclusion of dust evaporation')
+
 parser.add_argument('-b',
                     '--binary',
                     action = 'store',
-                    type = bool,
+                    type = str2bool,
                     nargs = 1,
 		            required = False,
                     help= 'If True it writes the data files in binary format, else in formatted ascii. Default is True')
 
-parser.add_argument('-v',
-                    '--vaporation',
-                    action = 'store',
-                    type = bool,
-                    nargs = 1,
-		            required = False,
-                    help='Boolean for inclusion of dust evaporation')
 
 parser.add_argument('-l',
                     '--listoffields',
@@ -115,9 +127,9 @@ parser.add_argument('-l',
 
 args = parser.parse_args()
 
+
+
 print("Converting outputs from " + str(args.o[0]).zfill(5))
-
-
 
 dv = DATtoRADMC.DATtoRADMC()
 #Setting the simulation number
@@ -148,13 +160,15 @@ dv.SetMass(args.m[0])
 if args.force is not None:
     dv.SetForce(args.force[0])
 
-#Setting whether to write data files in binary or in ascii
-if args.binary is not None:
-    dv.SetBinary(args.binary[0])
-
 #Setting whether to include dust evaporation
 if args.vaporation is not None:
+    print('Evap: ' + str(args.vaporation[0]))
     dv.SetEvap(args.vaporation[0])
+
+#Setting whether to write data files in binary or in ascii
+if args.binary is not None:
+    print(args.binary)
+    dv.SetBinary(args.binary[0])
 
 if args.directory is not None:
     dv.SetBasePath(args.d[0])
