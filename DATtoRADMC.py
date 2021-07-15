@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 from math import floor
 from tqdm import tqdm
+import itertools
 
 
 class DATtoRADMC:
@@ -628,8 +629,8 @@ class DATtoRADMC:
 
             # fixing the boundaries to be continous
             sigma = np.ones(len(data_coords_old))
-            # sigma[0] = 0.01
-            # sigma[-1] = 0.01
+            sigma[0] = 0.01
+            sigma[-1] = 0.01
 
             # ToDo extension if not mirrored with gaussian doesnt make sense.
             # do fitting and extrapolation
@@ -656,8 +657,6 @@ class DATtoRADMC:
                         array_top = np.full(self.n_extend,val_top)
                         array_bot = np.full(self.n_extend, val_bot)
                         extended_dat[:, r, phi] = np.concatenate([array_bot, reshaped_dat[:, r, phi], array_top])
-
-
 
             reshaped_dat = extended_dat
 
