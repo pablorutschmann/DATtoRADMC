@@ -1,5 +1,9 @@
+#v1.6.1
+* fixed total number of cells for velocity files
+
+
 #v1.6
-* truncated the vertices to 5 paces after the comma for the phi direction. Last vertice is now exactly 2 pi of RADMC3D.
+* truncated the vertices to 5 spaces after the comma for the phi direction. Last vertice is now exactly 2 pi of RADMC3D.
 * hardcoded the half pi in the theta axis with the exact value according to RADMC3D
 * New feature: Writing data files in ascii.
 

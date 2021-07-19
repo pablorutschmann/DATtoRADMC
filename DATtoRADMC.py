@@ -783,6 +783,9 @@ class DATtoRADMC:
             print('n_tot_filt: ' + str(n_tot_filt))
 
         array_int = [1, self.precis, n_tot, self.nrspec]
+        if 'velocity' in self.__feature:
+            array_int[2] = array_int[2] / 3
+
         # long integer
         array_int = np.array(array_int, dtype='int64')
 
@@ -865,6 +868,10 @@ class DATtoRADMC:
             print('n_tot_filt: ' + str(n_tot_filt))
 
         array_int = [1, n_tot, self.nrspec]
+
+        if 'velocity' in self.__feature:
+            array_int[1] = array_int[1]/3
+
         # long integer
         array_int = np.array(array_int, dtype='int64')
 
@@ -901,7 +908,6 @@ class DATtoRADMC:
             finally:
                 outfile_dust.close()
 
-        array_dbl = np.array(array_dbl, dtype='float64')
         feature = self.out_featlist[self.featlist.index(self.__feature)]
         if 'temperature' in self.__feature:
             outfile = open(self.dataOutPath + feature + '.dat', 'w')

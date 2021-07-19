@@ -1,6 +1,6 @@
 # JUPITER .dat to RADMC3D input files conversion class
 
-`v1.6`
+`v1.6.1`
 
 Rutschmann Pablo, June 2021
 
