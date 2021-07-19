@@ -162,12 +162,10 @@ if args.force is not None:
 
 #Setting whether to include dust evaporation
 if args.vaporation is not None:
-    print('Evap: ' + str(args.vaporation[0]))
     dv.SetEvap(args.vaporation[0])
 
 #Setting whether to write data files in binary or in ascii
 if args.binary is not None:
-    print(args.binary)
     dv.SetBinary(args.binary[0])
 
 if args.directory is not None:
