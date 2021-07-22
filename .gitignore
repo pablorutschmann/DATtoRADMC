@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 RADMC00235/
+RADMC00243/
 __pycache__/
 main235.py
 output00235/

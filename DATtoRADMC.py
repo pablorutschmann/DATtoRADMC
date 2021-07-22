@@ -727,15 +727,9 @@ class DATtoRADMC:
 
             outfile.write('\n')
 
-
-            def round_down(arr):
-                num = np.array(arr) * 100000
-                num = np.trunc(num)
-                num = num / 100000
-
-                return num.tolist()
-
-            outfile.write(" ".join(str(item) for item in round_down(self.LevelCoords['phi'][0])))
+            phi_coords = self.LevelCoords['phi'][0]
+            phi_coords[-1] = 6.28318
+            outfile.write(" ".join(str(item) for item in self.LevelCoords['phi'][0]))
 
             outfile.write('\n')
 

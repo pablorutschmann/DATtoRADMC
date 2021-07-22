@@ -53,6 +53,7 @@ parser.add_argument('g',
 
 #Whether to mirror the vertical axis
 parser.add_argument('-s',
+                    '--spiegel',
                     action = 'store',
                     nargs = 1,
                     type = str2bool,
@@ -61,6 +62,7 @@ parser.add_argument('-s',
 
 #Setting the number of cells to extend
 parser.add_argument('-e',
+                    '--extend',
                     action = 'store',
                     nargs = 1,
                     type = int,
@@ -143,12 +145,12 @@ dv.SetLevel(args.n[0])
 dv.SetRefinement(args.g[0])
 
 #Whether to mirror the vertical axis
-if args.s is not None:
-    dv.SetMirror(args.s[0])
+if args.spiegel is not None:
+    dv.SetMirror(args.spiegel[0])
 
 #Setting the number of cells to extend by
-if args.e is not None:
-    dv.SetExtend(args.e[0])
+if args.extend is not None:
+    dv.SetExtend(args.extend[0])
 
 #Setting the radius
 dv.SetRadius(args.r[0])
@@ -169,7 +171,7 @@ if args.binary is not None:
     dv.SetBinary(args.binary[0])
 
 if args.directory is not None:
-    dv.SetBasePath(args.d[0])
+    dv.SetBasePath(args.directory[0])
 
 #Setting the features
 if args.listoffields is not None:
